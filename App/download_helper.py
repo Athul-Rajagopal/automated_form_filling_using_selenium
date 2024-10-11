@@ -1,11 +1,54 @@
 import os
 import time
+import boto3
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from dotenv import load_dotenv
+from bson import ObjectId
+import uuid
+
+# Load environment variables
+load_dotenv()
+
+# AWS credentials and S3 configuration
+AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
+AWS_SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
+S3_REGION = os.getenv('AWS_REGION')
+
+
+def upload_to_s3(file_path, file_name):
+    """
+    Uploads a file to S3 and returns the public URL.
+    """
+    try:
+        # Generate a unique filename by appending a UUID
+        unique_filename = f"{uuid.uuid4()}_{file_name}"
+        
+        # Initialize the S3 client
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=AWS_ACCESS_KEY,
+            aws_secret_access_key=AWS_SECRET_KEY,
+            region_name=S3_REGION
+        )
+        
+        # Upload the file
+        s3_client.upload_file(file_path, S3_BUCKET_NAME, unique_filename)
+
+        # Generate the file URL
+        file_url = f"https://{S3_BUCKET_NAME}.s3.{S3_REGION}.amazonaws.com/{unique_filename}"
+        return file_url
+
+    except Exception as e:
+        error_message = f"Failed to upload to S3: {str(e)}"
+        print(error_message)
+        return {"success": False, "error": error_message}
+
 
 def wait_for_downloads(download_dir, timeout=60):
     """
@@ -27,7 +70,32 @@ def wait_for_downloads(download_dir, timeout=60):
                         time.sleep(1)  # Wait a moment to see if it is still downloading
                         if os.path.getsize(file_path) > 0:  # Still has content
                             print(f"Downloaded: {filename}")
-                            return
+                             # Upload the file to S3
+                            file_url = upload_to_s3(file_path, filename)
+                            if file_url:
+                                # Generate a unique ObjectId for the document
+                                document_id = str(ObjectId())
+                                
+                                # Return ObjectId and file URL
+                                return {
+                                    "success": True,
+                                    "document_id": document_id,
+                                    "s3_link": file_url
+                                }
+                                
+                                # Remove the local file after upload (optional)
+                                os.remove(file_path)
+                            else:
+                                os.remove(file_path)
+                                return {
+                                    "success": False,
+                                    "error": upload_result['error']
+                                }
+                            
         time.sleep(1)  # Wait before checking again
         seconds_elapsed += 1
     print("Download did not complete in the expected time frame.")
+    return {
+        "success": False,
+        "error": "Download did not complete in the expected time frame."
+    }
