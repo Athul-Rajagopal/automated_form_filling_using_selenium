@@ -86,7 +86,7 @@ def fill_form(user_data):
         wait.until(EC.presence_of_element_located((By.NAME, 'PassportWizard$aboutYouStep$dobTextBox'))).send_keys(formatted_dob) 
                 
         # city of birth
-        wait.until(EC.presence_of_element_located((By.NAME, 'PassportWizard$aboutYouStep$pobCityTextBox'))).send_keys(user_data['personalInfo']['placeOfBirth'])
+        wait.until(EC.presence_of_element_located((By.NAME, 'PassportWizard$aboutYouStep$pobCityTextBox'))).send_keys(user_data['personalInfo']['cityOfBirth'])
         
         # country of birth
         country_dropdown = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_aboutYouStep_pobCountryList"]')))
@@ -94,11 +94,11 @@ def fill_form(user_data):
         
         # state of birth
         country = user_data["personalInfo"].get("countryOfBirth").upper()
-        if country in ['CANADA', 'UNITED STATES']:
+        if country in ['CAN', 'USA']:
             # state_dropdown = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_aboutYouStep_pobStateList')))
             
             select_country_and_state(
-                country=country, 
+                iso_country_code=country, 
                 state_abbreviation=user_data["personalInfo"]["stateOfBirth"], 
                 driver=driver, 
                 country_xpath='//*[@id="PassportWizard_aboutYouStep_pobCountryList"]',  # Country dropdown XPath
@@ -178,10 +178,10 @@ def fill_form(user_data):
         
         # state
         country = user_data["addressInfo"].get("country").upper()
-        if country in ['CANADA', 'UNITED STATES']:
+        if country in ['CAN', 'USA']:
             # state_dropdown = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_mailStateList"]')))
             select_country_and_state(
-                country=country, 
+                iso_country_code=country, 
                 state_abbreviation=user_data["addressInfo"]["state"], 
                 driver=driver, 
                 country_xpath='//*[@id="PassportWizard_addressStep_mailCountryList"]',  # Country dropdown XPath
@@ -212,11 +212,11 @@ def fill_form(user_data):
             select_country(country_dropdown, user_data["permanentAddress"]["country"], driver)
             
             country = user_data["permanentAddress"].get("country").upper()
-            if country in ['CANADA', 'UNITED STATES']:
+            if country in ['CAN', 'USA']:
                 # state_dropdown = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_permanentStateList"]')))
                 # select_state(state_dropdown, user_data["permanentAddress"]["state"], driver)
                 select_country_and_state(
-                country=country, 
+                iso_country_code=country, 
                 state_abbreviation=user_data["permanentAddress"]["state"], 
                 driver=driver, 
                 country_xpath='//*[@id="PassportWizard_addressStep_permanentCountryList"]',  # Country dropdown XPath
@@ -289,7 +289,7 @@ def fill_form(user_data):
         date_of_return = datetime.strptime(date_of_return_str, "%Y-%m-%dT%H:%M:%S.%fZ")
         formatted_dor = date_of_return.strftime("%m-%d-%Y")
         wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_travelPlans_TripDateTextBox'))).send_keys(formatted_dor)
-        
+        ### trave ldestination is to be filled
         # click next
         next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
         next_button.click()
@@ -420,7 +420,7 @@ def fill_form(user_data):
             driver.execute_script("arguments[0].click();", gender_radio)
             
         # citizenship
-        citizenship = user_data["parentInfo"]['parent1'].get("isUSCitizen")
+        citizenship = user_data["parentInfo"]['parent2'].get("isUSCitizen")
         if citizenship:
             citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent2CitizenList_0"]')))  # Other/Unspecified
             driver.execute_script("arguments[0].click();", citizenship_radio)
@@ -434,17 +434,17 @@ def fill_form(user_data):
             radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_marriedList_0"]')))  # Other/Unspecified
             driver.execute_script("arguments[0].click();", radio)
             
-            wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseNameTextBox'))).send_keys(user_data['marriageInfo']['marriageDetails']["firstName"])
-            wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseLastNameTextBox'))).send_keys(user_data['marriageInfo']['marriageDetails']["lastName"])
+            wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseNameTextBox'))).send_keys(user_data['marriageInfo']['marriageDetails']["spouseFirstName"])
+            wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseLastNameTextBox'))).send_keys(user_data['marriageInfo']['marriageDetails']["spouseLastName"])
             # dob
-            spouse_dob_str = user_data['marriageInfo']['marriageDetails']["dateOfBirth"]["$date"]
+            spouse_dob_str = user_data['marriageInfo']['marriageDetails']["spouseDateOfBirth"]["$date"]
             spouse_dob = datetime.strptime(spouse_dob_str, "%Y-%m-%dT%H:%M:%S.%fZ")
             formatted_dob = spouse_dob.strftime("%m-%d-%Y")
             wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseBirthDateTextBox'))).send_keys(formatted_dob)
             # place of birth
-            wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseBirthplaceTextBox'))).send_keys(user_data['marriageInfo']['marriageDetails']["placeOfBirth"])
+            wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseBirthplaceTextBox'))).send_keys(user_data['marriageInfo']['marriageDetails']["spousePlaceOfBirth"])
             # citizenship
-            citizenship = user_data['marriageInfo']['marriageDetails'].get("isUSCitizen")
+            citizenship = user_data['marriageInfo']['marriageDetails'].get("spouseIsUSCitizen")
             if citizenship:
                 citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_spouseCitizenList_0"]')))  # Other/Unspecified
                 driver.execute_script("arguments[0].click();", citizenship_radio)
@@ -453,13 +453,13 @@ def fill_form(user_data):
                 driver.execute_script("arguments[0].click();", citizenship_radio)
                 
             # date of marriage
-            date_of_marriage_str = user_data['marriageInfo']['marriageDetails']["dateOfMarriage"]["$date"]
+            date_of_marriage_str = user_data['marriageInfo']['marriageDetails']["marriageDate"]["$date"]
             date_of_marriage = datetime.strptime(date_of_marriage_str, "%Y-%m-%dT%H:%M:%S.%fZ")
             formatted_dom = date_of_marriage.strftime("%m-%d-%Y")
             wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_marriedDateTextBox'))).send_keys(formatted_dom)
             
             # widow or divorce
-            widow_or_divorce = user_data['marriageInfo']['marriageDetails'].get("isWidowOrDivorced")
+            widow_or_divorce = user_data['marriageInfo']['marriageDetails'].get("isWidowedOrDivorced")
             if widow_or_divorce:
                 radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_divorcedList_0"]'))) 
                 driver.execute_script("arguments[0].click();", radio)
@@ -533,15 +533,15 @@ def fill_form(user_data):
         # driver.execute_script("arguments[0].scrollIntoView();", next_button)
         driver.execute_script("arguments[0].click();", next_button)
         
-        wait_for_downloads(download_dir)
+        # Wait for the download to complete and get the result
+        download_result = wait_for_downloads(download_dir)
         
-        time.sleep(10)
+        # time.sleep(10)
         print("pdf downloaded")
         
+        return download_result
         
-                
-        
-        
+             
             
     except Exception as e:
         print(f"An error occurred: {e}", flush=True)
