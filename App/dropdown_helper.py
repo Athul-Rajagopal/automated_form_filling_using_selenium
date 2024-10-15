@@ -1,6 +1,6 @@
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import StaleElementReferenceException, TimeoutException, UnexpectedAlertPresentException
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException, UnexpectedAlertPresentException, WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.alert import Alert
 import time
@@ -67,7 +67,7 @@ def select_eye_color(select_element, eye_color,):
         select.select_by_visible_text('HAZEL')
 
 
-def select_country(select_element, country, driver):
+def select_country(select_element, country_code, driver):
     """ Select country from dropdown (case-sensitive matching) """
     select = Select(select_element)
     
@@ -75,46 +75,53 @@ def select_country(select_element, country, driver):
     driver.execute_script("arguments[0].scrollIntoView(true);", select_element)
 
     try:
-        # Ensure the country name is in upper case to match the options
-        country_name = country.strip().upper()
+        # Ensure the ISO country code is in upper case
+        country_code = country_code.strip().upper()
         
-        # Match the country with the available options
-        for option in select.options:
-            if option.text.strip() == country_name:
+        # corrected code to again select usa if country is usa
+        li = select.options
+        print(f"dsdfd {li[1].get_attribute('value')}")
+        for opt in range(2, len(li)):
+            option = li[opt]
+            if option.get_attribute('value').strip() == country_code:
                 option.click()  # Select the matching option
+                print(f"Selected country: {country_code}")
                 return
         
-        raise Exception(f"Country '{country_name}' not found in dropdown.")
+        raise Exception(f"Country '{country_code}' not found in dropdown.")
     
     except Exception as e:
-        print(f"Could not find the country: {country}. Error: {e}")
-
+        print(f"Could not find the country: {country_code}. Error: {e}")
 
 
 def select_state(select_element, state_abbreviation, driver, state_xpath):
     """Select state from dropdown with abbreviation (case-sensitive matching)"""
     state_abbreviation = state_abbreviation.strip().upper()
 
-    # Try to select the state in a loop, handling stale element references
     for attempt in range(3):  # Retry up to 3 times
         try:
+            driver.execute_script("arguments[0].focus();", select_element)
+            driver.execute_script("arguments[0].click();", select_element)
+            print(f"Focused and clicked on state input box to open the dropdown.")
+
+            # Wait for options to become visible after clicking the input
+            WebDriverWait(driver, 60).until(
+                EC.visibility_of_element_located((By.XPATH, state_xpath + "/option"))
+            )
             select = Select(select_element)
 
             # Scroll the dropdown into view
             driver.execute_script("arguments[0].scrollIntoView(true);", select_element)
             print(f"Trying to select state: {state_abbreviation}")
 
-            # Iterate through options in the select dropdown
             for option in select.options:
                 option_value = option.get_attribute("value").strip()
                 option_text = option.text.strip()
 
-                # Print diagnostic information for debugging
                 print(f"Option Value: {option_value}, Option Text: {option_text}")
 
-                # Match either the option value or text with the abbreviation
                 if state_abbreviation == option_value or option_text.startswith(state_abbreviation):
-                    option.click()  # Select the matching option
+                    option.click()
                     print(f"Selected state: {state_abbreviation}")
                     return
 
@@ -122,44 +129,57 @@ def select_state(select_element, state_abbreviation, driver, state_xpath):
 
         except StaleElementReferenceException as e:
             print(f"StaleElementReferenceException caught on attempt {attempt + 1}. Retrying...")
-            # Re-find the dropdown element to refresh its reference
             state_dropdown = WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, state_xpath)))
             select_element = state_dropdown
         except Exception as e:
             print(f"Could not find the state: {state_abbreviation}. Error: {e}")
-            break  # Break the loop after other types of errors (non-retryable)
+            break
 
-def select_country_and_state(country, state_abbreviation, driver, country_xpath, state_xpath):
-    """Select a country, wait for the state dropdown to update, then select the state."""
+
+def select_country_and_state(country_code, state_abbreviation, driver, country_xpath, state_xpath, permanent_address=False):
+    """wait for the state dropdown to update, then select the state."""
     try:
-        # Select the country first
-        country_dropdown = WebDriverWait(driver, 60).until(
-            EC.presence_of_element_located((By.XPATH, country_xpath))
-        )
-        select_country = Select(country_dropdown)
-        select_country.select_by_visible_text(country)
-        print(f"Selected country: {country}")
+        if permanent_address and country_code == 'USA':
+            
+            state_dropdown = WebDriverWait(driver, 60).until(
+                EC.presence_of_element_located((By.XPATH, state_xpath))
+            )
+            print(f"State dropdown refreshed and ready.")
 
-        # Wait for the state dropdown to refresh
-        WebDriverWait(driver, 60).until(
-            EC.staleness_of(driver.find_element(By.XPATH, state_xpath))
-        )
+            # Select the state
+            select_state(state_dropdown, state_abbreviation, driver, state_xpath)
+            
+            
+        if not driver.window_handles:
+            raise WebDriverException("Browser window is closed or session is not available.")
         
-        # Wait for the state dropdown to be reloaded and visible
+        # Wait for the state dropdown to be stale (reloading) after selecting the country
+        WebDriverWait(driver, 60).until(EC.staleness_of(driver.find_element(By.XPATH, state_xpath)))
+
+        print(f"hai this is ashmila {state_xpath}")
+        # Wait for the new state dropdown to be present and visible
         state_dropdown = WebDriverWait(driver, 60).until(
             EC.presence_of_element_located((By.XPATH, state_xpath))
         )
-        print("State dropdown refreshed and ready.")
+        print(f"State dropdown refreshed and ready.")
 
-        # Select the state after it refreshes
+        # Select the state
         select_state(state_dropdown, state_abbreviation, driver, state_xpath)
 
     except TimeoutException as e:
         print(f"Timeout waiting for dropdown to update. Error: {e}")
+        
+    except UnexpectedAlertPresentException:
+        # Handle the alert about missing state selection
+        alert = driver.switch_to.alert
+        alert_text = alert.text
+        print(f"Alert detected: {alert_text}")
+        alert.accept()
+        
     except Exception as e:
         print(f"An error occurred: {e}")
-        
-        
+
+   
 
 def select_state_without_country(driver, state_abbreviation, state_xpath):
     """Select state from dropdown using abbreviation, handling dynamic dropdowns."""

@@ -11,6 +11,9 @@ from dotenv import load_dotenv
 from bson import ObjectId
 import uuid
 
+from PyPDF2 import PdfReader, PdfWriter
+
+
 # Load environment variables
 load_dotenv()
 
@@ -49,6 +52,28 @@ def upload_to_s3(file_path, file_name):
         print(error_message)
         return {"success": False, "error": error_message}
 
+    
+    
+# removing unwanted pages
+def remove_first_four_pages(input_pdf_path, output_pdf_path):
+    """
+    Remove the first four pages from a PDF.
+    
+    :param input_pdf_path: Path to the input PDF.
+    :param output_pdf_path: Path to save the modified PDF.
+    """
+    reader = PdfReader(input_pdf_path)
+    writer = PdfWriter()
+
+    # Copy all pages except the first four
+    for page_num in range(4, len(reader.pages)):
+        writer.add_page(reader.pages[page_num])
+
+    with open(output_pdf_path, 'wb') as output_pdf:
+        writer.write(output_pdf)
+
+
+
 
 def wait_for_downloads(download_dir, timeout=60):
     """
@@ -65,17 +90,31 @@ def wait_for_downloads(download_dir, timeout=60):
             for filename in os.listdir(download_dir):
                 if filename.endswith('.pdf'):
                     file_path = os.path.join(download_dir, filename)
+                    modified_file_path = os.path.join(download_dir, f"modified_{filename}")
+                    
                     # Check if the file is still being written to
                     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
                         time.sleep(1)  # Wait a moment to see if it is still downloading
                         if os.path.getsize(file_path) > 0:  # Still has content
                             print(f"Downloaded: {filename}")
+
+                            
+                            # Remove the first four pages of the PDF
+                            remove_first_four_pages(file_path, modified_file_path)
+                            
+                            
                              # Upload the file to S3
-                            file_url = upload_to_s3(file_path, filename)
+                            file_url = upload_to_s3(modified_file_path, filename)
+
                             if file_url:
                                 # Generate a unique ObjectId for the document
                                 document_id = str(ObjectId())
                                 
+
+                                # Clean up local files after upload
+                                os.remove(file_path)
+                                os.remove(modified_file_path)
+
                                 # Return ObjectId and file URL
                                 return {
                                     "success": True,
@@ -83,10 +122,13 @@ def wait_for_downloads(download_dir, timeout=60):
                                     "s3_link": file_url
                                 }
                                 
-                                # Remove the local file after upload (optional)
-                                os.remove(file_path)
+
+                                
                             else:
                                 os.remove(file_path)
+                                os.remove(modified_file_path)
+                                
+
                                 return {
                                     "success": False,
                                     "error": upload_result['error']

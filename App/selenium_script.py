@@ -20,24 +20,36 @@ def fill_form(user_data):
     chrome_options = Options()
     # chrome_options.add_argument("--headless")
     
-    # Use the Service class to specify the driver path
-    chrome_service = Service(r"C:\chromedriver.exe")
-    chrome_options.page_load_strategy = 'eager' 
+    # chrome_options.page_load_strategy = 'eager'
+    chrome_options.page_load_strategy = 'normal' 
     
     download_dir = r"C:\Users\athul\Downloads\passport"  # Change this to your desired download directory
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")  # Disable GPU rendering to avoid issues
+    chrome_options.add_argument("--disable-software-rasterizer")
+    chrome_options.add_argument("--disable-extensions")  # Disable all extensions
+    chrome_options.add_argument("--disable-plugins")  # Disable plugins
+    chrome_options.add_argument("--disable-infobars")  # Disable infobars
+    
     chrome_options.add_experimental_option("prefs", {
         "download.default_directory": download_dir,  # Set download directory
         "download.prompt_for_download": False,  # Disable the download prompt
         "plugins.always_open_pdf_externally": True  # Open PDFs externally
     })
 
+    # Use the Service class to specify the driver path
+    # chrome_service = Service(r"C:\chromedriver.exe")
+    chrome_service = Service(r"C:\chromw\chromedriver.exe")
     # Pass the service object to the Chrome WebDriver
-    driver = webdriver.Chrome(options=chrome_options)  
+    driver = webdriver.Chrome(service=chrome_service, options=chrome_options)  
     
     try:
 # Page 1
         # Navigate to the form page
-        driver.get("https://pptform.state.gov/")     
+        driver.get("https://pptform.state.gov/")  
+        WebDriverWait(driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')   
         
         # Locate the checkbox using XPath and click it
         wait = WebDriverWait(driver, 60)  # Wait up to 60 seconds
@@ -57,7 +69,6 @@ def fill_form(user_data):
         form_fill_select_submit_button.click()  
         
         print('waiting for page 3')
-        # wait.until(EC.url_contains("https://pptform.state.gov/PassportWizardMain.aspx"))
         
         
         
@@ -95,15 +106,23 @@ def fill_form(user_data):
         # state of birth
         country = user_data["personalInfo"].get("countryOfBirth").upper()
         if country in ['CAN', 'USA']:
-            # state_dropdown = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_aboutYouStep_pobStateList')))
+
+            sst = user_data["personalInfo"]
+            cc = sst.get('stateOfBirth')
+            print(f'ashmil {cc}')
+            print(cc)
             
-            select_country_and_state(
-                iso_country_code=country, 
-                state_abbreviation=user_data["personalInfo"]["stateOfBirth"], 
-                driver=driver, 
-                country_xpath='//*[@id="PassportWizard_aboutYouStep_pobCountryList"]',  # Country dropdown XPath
-                state_xpath='//*[@id="PassportWizard_aboutYouStep_pobStateList"]'       # State dropdown XPath
-            )
+            try:
+                select_country_and_state(
+                    country_code=country, 
+                    state_abbreviation=cc, 
+                    driver=driver, 
+                    country_xpath='//*[@id="PassportWizard_aboutYouStep_pobCountryList"]',  # Country dropdown XPath
+                    state_xpath='//*[@id="PassportWizard_aboutYouStep_pobStateList"]'       # State dropdown XPath
+                )
+            except Exception as e :
+                print(str(e))
+
         
         # social security number
         wait.until(EC.presence_of_element_located((By.NAME, 'PassportWizard$aboutYouStep$ssnTextBox'))).send_keys(user_data['personalInfo']['socialSecurityNumber'])
@@ -126,7 +145,7 @@ def fill_form(user_data):
         inches_height = user_data['physicalDescription']['height']['inches']
         select_height_inches(height_inches_dropdown, inches_height)
 
-        
+     
         # hair color
         hair_color_dropdown = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_aboutYouStep_hairList"]')))
         select_hair_color(hair_color_dropdown, user_data['physicalDescription']['hairColor'])
@@ -147,8 +166,6 @@ def fill_form(user_data):
         about_form_submit_button = wait.until(EC.element_to_be_clickable((By.ID, 'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
         about_form_submit_button.click()
         
-        # Wait for the next page to load
-        # wait.until(EC.url_changes(driver.current_url))
         print("waiting for page 4")
         
 # page 4
@@ -179,9 +196,10 @@ def fill_form(user_data):
         # state
         country = user_data["addressInfo"].get("country").upper()
         if country in ['CAN', 'USA']:
-            # state_dropdown = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_mailStateList"]')))
+
+            
             select_country_and_state(
-                iso_country_code=country, 
+                country_code=country, 
                 state_abbreviation=user_data["addressInfo"]["state"], 
                 driver=driver, 
                 country_xpath='//*[@id="PassportWizard_addressStep_mailCountryList"]',  # Country dropdown XPath
@@ -212,17 +230,29 @@ def fill_form(user_data):
             select_country(country_dropdown, user_data["permanentAddress"]["country"], driver)
             
             country = user_data["permanentAddress"].get("country").upper()
+
+            print(f"country_permanant : {country}")
             if country in ['CAN', 'USA']:
-                # state_dropdown = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_permanentStateList"]')))
-                # select_state(state_dropdown, user_data["permanentAddress"]["state"], driver)
+                add_info = user_data['permanentAddress']
+                sts = add_info.get("state")
+                print(f"permanent_state {sts}")
+                
+                # # Wait for the state list to load before selecting country and state
+                WebDriverWait(driver, 60).until(
+                    EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_permanentStateList"]'))
+                )
+                
                 select_country_and_state(
-                iso_country_code=country, 
-                state_abbreviation=user_data["permanentAddress"]["state"], 
+                country_code=country, 
+                state_abbreviation=sts, 
                 driver=driver, 
                 country_xpath='//*[@id="PassportWizard_addressStep_permanentCountryList"]',  # Country dropdown XPath
-                state_xpath='//*[@id="PassportWizard_addressStep_permanentStateList"]'       # State dropdown XPath
+                state_xpath='//*[@id="PassportWizard_addressStep_permanentStateList"]',       # State dropdown XPath
+                permanent_address=True
             )
             # zipcode
+            # Wait for JavaScript to finish executing
+            WebDriverWait(driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')
             wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_addressStep_permanentZipTextBox'))).send_keys(user_data['permanentAddress']['zipCode'])
         
         # choosing prefered communication medium    
@@ -280,16 +310,34 @@ def fill_form(user_data):
 # page 5     
         # travel plans
         
-        date_of_trip_str = user_data['travelPlans']['travelDate']['$date']
-        date_of_trip = datetime.strptime(date_of_trip_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-        formatted_dot = date_of_trip.strftime("%m-%d-%Y")
-        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_travelPlans_TripDateTextBox'))).send_keys(formatted_dot)
+
+        date_of_trip_str = user_data.get('travelPlans').get('travelDate').get('$date')
+        if date_of_trip_str:
+            date_of_trip = datetime.strptime(date_of_trip_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+            formatted_dot = date_of_trip.strftime("%m-%d-%Y")
+            wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_travelPlans_TripDateTextBox'))).send_keys(formatted_dot)
+            # Unfocus the field by clicking somewhere else (e.g., body)
+            driver.find_element(By.TAG_NAME, 'body').click()
+            time.sleep(2) 
         
-        date_of_return_str = user_data['travelPlans']['returnDate']['$date']
-        date_of_return = datetime.strptime(date_of_return_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-        formatted_dor = date_of_return.strftime("%m-%d-%Y")
-        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_travelPlans_TripDateTextBox'))).send_keys(formatted_dor)
-        ### trave ldestination is to be filled
+        date_of_return_str = user_data.get('travelPlans').get('returnDate').get('$date')
+        if date_of_return_str:
+            print("return date str", date_of_return_str)
+            date_of_return = datetime.strptime(date_of_return_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+            formatted_dor = date_of_return.strftime("%m-%d-%Y")
+            print("return data", formatted_dor)
+            return_date_input = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_travelPlans_TripDateReturnTextBox"]')))
+            return_date_input.click()  # Focus on the field
+            return_date_input.send_keys(formatted_dor)
+            time.sleep(2)
+        ### travel destination is to be filled
+        travel_destination = user_data.get('travelPlans').get("travelDestination")
+        if travel_destination:
+            print("destinaiton", travel_destination)
+            travel_destination_input = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_travelPlans_CountriesTextBox"]')))
+            travel_destination_input.click()
+            travel_destination_input.send_keys(travel_destination)
+        
         # click next
         next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
         next_button.click()
@@ -299,26 +347,26 @@ def fill_form(user_data):
 # page 6
         # emergency contact
         # name
-        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_emergencyContacts_ecNameTextBox'))).send_keys(user_data['emergencyContact']['emergencyContactName'])
+        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_emergencyContacts_ecNameTextBox'))).send_keys(user_data['emergencyContact'].get('emergencyContactName', 'N/A'))
         
         # street
-        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_emergencyContacts_ecAddressTextBox'))).send_keys(user_data['emergencyContact']['street'])
+        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_emergencyContacts_ecAddressTextBox'))).send_keys(user_data['emergencyContact'].get('street', 'N/A'))
         
         # appartment
-        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_emergencyContacts_ecApartmentTextBox'))).send_keys(user_data['emergencyContact']['apartmentOrUnit'])
+        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_emergencyContacts_ecApartmentTextBox'))).send_keys(user_data['emergencyContact'].get('apartmentOrUnit', 'N/A'))
         
         # city
-        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_emergencyContacts_ecCityTextBox'))).send_keys(user_data['emergencyContact']['city'])
+        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_emergencyContacts_ecCityTextBox'))).send_keys(user_data['emergencyContact'].get('city', 'N/A'))
         
         
         # zip code
-        wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_emergencyContacts_ZipCodeTextBox"]'))).send_keys(user_data['emergencyContact']['zipCode'])
+        wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_emergencyContacts_ZipCodeTextBox"]'))).send_keys(user_data['emergencyContact'].get('zipCode'))
         
         # phone
-        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_emergencyContacts_ecPhoneTextBox'))).send_keys(user_data['emergencyContact']['emergencyContactPhone'])
+        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_emergencyContacts_ecPhoneTextBox'))).send_keys(user_data['emergencyContact'].get('emergencyContactPhone'))
         
         # relationship
-        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_emergencyContacts_ecRelationshipTextBox'))).send_keys(user_data['emergencyContact']['emergencyContactRelationship'])
+        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_emergencyContacts_ecRelationshipTextBox'))).send_keys(user_data['emergencyContact'].get('emergencyContactRelationship'))
         
         # state 
         state_abbreviation = user_data["emergencyContact"]["state"]
@@ -334,6 +382,137 @@ def fill_form(user_data):
         
 # page 7
 
+        # # passport history
+        # passport_history = user_data.get("passportHistory").get("hasPassportCardOrBook", "none")
+        
+        # if passport_history == "book":
+        #     type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveBook"]')))
+        #     driver.execute_script("arguments[0].click();", type_radio)
+        #     # status
+        #     sts = user_data.get("passportHistory").get("passportBookDetails").get("status")
+        #     if sts == "inPossession":
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookYes"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+        #     elif sts == "stolen":
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookStolen"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+        #     elif sts == "lost":
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookLost"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+        #     else:
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookDamaged"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+
+        #     #issued date
+        #     date_of_issue_str = user_data["passportHistory"].get("passportBookDetails")["issueDate"].get("$date")
+        #     date_of_issue = datetime.strptime(date_of_issue_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+        #     formatted_doi = date_of_issue.strftime("%m-%d-%Y")
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_BookIssueDate'))).send_keys(formatted_doi)
+            
+        #     # first name
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_firstNameOnBook'))).send_keys(user_data["passportHistory"]["passportBookDetails"]["firstName"])
+        #     # last name
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_lastNameOnBook'))).send_keys(user_data["passportHistory"]["passportBookDetails"]["lastName"])
+        #     # book number
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingBookNumber'))).send_keys(user_data["passportHistory"]["passportBookDetails"]["number"])
+            
+        # elif passport_history == "card":
+            
+        #     type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveCard"]')))
+        #     driver.execute_script("arguments[0].click();", type_radio)
+        #     # status
+        #     sts = user_data.get("passportHistory").get("passportCardDetails").get("status")
+        #     if sts == "inPossession":
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardYes"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+        #     elif sts == "stolen":
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardStolen"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+        #     elif sts == "lost":
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardLost"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+        #     else:
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardDamaged"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+
+        #     #issued date
+        #     date_of_issue_str = user_data["passportHistory"].get("passportCardDetails")["issueDate"].get("$date")
+        #     date_of_issue = datetime.strptime(date_of_issue_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+        #     formatted_doi = date_of_issue.strftime("%m-%d-%Y")
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_CardIssueDate'))).send_keys(formatted_doi)
+            
+        #     # first name
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_firstNameOnCard'))).send_keys(user_data["passportHistory"]["passportCardDetails"]["firstName"])
+        #     # last name
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_lastNameOnCard'))).send_keys(user_data["passportHistory"]["passportCardDetails"]["lastName"])
+        #     # book number
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingCardNumber'))).send_keys(user_data["passportHistory"]["passportCardDetails"]["number"])
+            
+        
+        # elif passport_history == "both":
+        #     type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveBoth"]')))
+        #     driver.execute_script("arguments[0].click();", type_radio)
+        #     ## book
+            
+        #     # status
+        #     sts = user_data.get("passportHistory").get("passportBookDetails").get("status")
+        #     if sts == "inPossession":
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookYes"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+        #     elif sts == "stolen":
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookStolen"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+        #     elif sts == "lost":
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookLost"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+        #     else:
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookDamaged"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+
+        #     #issued date
+        #     date_of_issue_str = user_data["passportHistory"].get("passportBookDetails")["issueDate"].get("$date")
+        #     date_of_issue = datetime.strptime(date_of_issue_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+        #     formatted_doi = date_of_issue.strftime("%m-%d-%Y")
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_BookIssueDate'))).send_keys(formatted_doi)
+            
+        #     # first name
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_firstNameOnBook'))).send_keys(user_data["passportHistory"]["passportBookDetails"]["firstName"])
+        #     # last name
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_lastNameOnBook'))).send_keys(user_data["passportHistory"]["passportBookDetails"]["lastName"])
+        #     # book number
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingBookNumber'))).send_keys(user_data["passportHistory"]["passportBookDetails"]["number"])
+            
+        #     # status
+        #     sts = user_data.get("passportHistory").get("passportCardDetails").get("status")
+        #     if sts == "inPossession":
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardYes"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+        #     elif sts == "stolen":
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardStolen"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+        #     elif sts == "lost":
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardLost"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+        #     else:
+        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardDamaged"]')))
+        #         driver.execute_script("arguments[0].click();", type_radio)
+
+        #     #issued date
+        #     date_of_issue_str = user_data["passportHistory"].get("passportCardDetails")["issueDate"].get("$date")
+        #     date_of_issue = datetime.strptime(date_of_issue_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+        #     formatted_doi = date_of_issue.strftime("%m-%d-%Y")
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_CardIssueDate'))).send_keys(formatted_doi)
+            
+        #     # first name
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_firstNameOnCard'))).send_keys(user_data["passportHistory"]["passportCardDetails"]["firstName"])
+        #     # last name
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_lastNameOnCard'))).send_keys(user_data["passportHistory"]["passportCardDetails"]["lastName"])
+        #     # book number
+        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingCardNumber'))).send_keys(user_data["passportHistory"]["passportCardDetails"]["number"])
+
+        
+        # else:
+            
         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveNone"]')))
         driver.execute_script("arguments[0].click();", type_radio)
         
@@ -355,7 +534,7 @@ def fill_form(user_data):
         parent1_dob = datetime.strptime(parent1_dob_str, "%Y-%m-%dT%H:%M:%S.%fZ")
         formatted_dob1 = parent1_dob.strftime("%m-%d-%Y")
         print(formatted_dob1)
-        # wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent1BirthDateTextBox'))).send_keys(formatted_dob)
+
         parent1_dob_input = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent1BirthDateTextBox')))
         parent1_dob_input.click()  # Focus the field
         parent1_dob_input.clear()   # Clear any existing value
@@ -397,7 +576,7 @@ def fill_form(user_data):
         formatted_dob2 = parent2_dob.strftime("%m-%d-%Y")
         
         print(formatted_dob2)
-        # wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent2BirthDateTextBox'))).send_keys(formatted_dob)
+        
         parent2_dob_input = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent2BirthDateTextBox')))
         parent2_dob_input.click()  # Focus the field
         parent2_dob_input.clear()   # Clear any existing value
@@ -463,7 +642,13 @@ def fill_form(user_data):
             if widow_or_divorce:
                 radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_divorcedList_0"]'))) 
                 driver.execute_script("arguments[0].click();", radio)
-                ## want to fill divorced date
+                # divorced date
+                marriage_or_divorce_date_str = user_data['marriageInfo']['marriageDetails']["widowOrDivorceDate"]
+                marriage_or_divorce_date = datetime.strptime(marriage_or_divorce_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                formatted_dod = marriage_or_divorce_date.strftime("%m-%d-%Y")
+                wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_divorcedDateTextBox'))).send_keys(formatted_dod)
+        
+                
             else:
                 radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_divorcedList_1"]')))  
                 driver.execute_script("arguments[0].click();", radio)
@@ -480,6 +665,36 @@ def fill_form(user_data):
         
 # page 9
         # other names
+        
+        other_names = user_data.get("personalInfo").get("allPreviousNames", [])
+        
+        if other_names:
+            for index, name in enumerate(other_names):
+                
+                split_names = name.strip().split(" ", 1)  
+                first_name = split_names[0]  
+                last_name = split_names[1] if len(split_names) > 1 else ""  
+
+                # Wait for the first name field and fill it
+                first_name_input = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_otherNameStep_addOtherFirstTextBox')))
+                first_name_input.send_keys(first_name)
+
+                # Wait for the last name field and fill it
+                last_name_input = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_otherNameStep_addOtherLastTextBox')))
+                last_name_input.send_keys(last_name)
+
+                time.sleep(2)
+                # If there are more names to enter, click the 'Add More' button
+                if index < len(other_names) - 1:
+                    add_button = wait.until(EC.element_to_be_clickable((By.ID, 'PassportWizard_otherNameStep_addButton')))
+                    add_button.click()
+
+                    # Wait for the new fields to appear and stabilize before the next iteration
+                    time.sleep(3)
+                    wait.until(EC.presence_of_element_located((By.ID, f'PassportWizard_otherNameStep_addOtherFirstTextBox')))
+                
+        
+        
         input_id='PassportWizard_otherNameStep_addOtherFirstTextBox'
         wait.until(EC.presence_of_element_located((By.ID, input_id)))
         input_field = driver.find_element(By.ID, input_id)
@@ -545,7 +760,7 @@ def fill_form(user_data):
             
     except Exception as e:
         print(f"An error occurred: {e}", flush=True)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e), "success":False}), 500
 
     finally:
         driver.quit()
