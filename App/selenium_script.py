@@ -106,6 +106,7 @@ def fill_form(user_data):
         # state of birth
         country = user_data["personalInfo"].get("countryOfBirth").upper()
         if country in ['CAN', 'USA']:
+
             sst = user_data["personalInfo"]
             cc = sst.get('stateOfBirth')
             print(f'ashmil {cc}')
@@ -121,6 +122,7 @@ def fill_form(user_data):
                 )
             except Exception as e :
                 print(str(e))
+
         
         # social security number
         wait.until(EC.presence_of_element_located((By.NAME, 'PassportWizard$aboutYouStep$ssnTextBox'))).send_keys(user_data['personalInfo']['socialSecurityNumber'])
@@ -194,6 +196,7 @@ def fill_form(user_data):
         # state
         country = user_data["addressInfo"].get("country").upper()
         if country in ['CAN', 'USA']:
+
             
             select_country_and_state(
                 country_code=country, 
@@ -227,6 +230,7 @@ def fill_form(user_data):
             select_country(country_dropdown, user_data["permanentAddress"]["country"], driver)
             
             country = user_data["permanentAddress"].get("country").upper()
+
             print(f"country_permanant : {country}")
             if country in ['CAN', 'USA']:
                 add_info = user_data['permanentAddress']
@@ -306,6 +310,7 @@ def fill_form(user_data):
 # page 5     
         # travel plans
         
+
         date_of_trip_str = user_data.get('travelPlans').get('travelDate').get('$date')
         if date_of_trip_str:
             date_of_trip = datetime.strptime(date_of_trip_str, "%Y-%m-%dT%H:%M:%S.%fZ")
