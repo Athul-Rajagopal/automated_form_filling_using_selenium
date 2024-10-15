@@ -10,7 +10,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
 from bson import ObjectId
 import uuid
+
 from PyPDF2 import PdfReader, PdfWriter
+
 
 # Load environment variables
 load_dotenv()
@@ -49,6 +51,7 @@ def upload_to_s3(file_path, file_name):
         error_message = f"Failed to upload to S3: {str(e)}"
         print(error_message)
         return {"success": False, "error": error_message}
+
     
     
 # removing unwanted pages
@@ -68,6 +71,8 @@ def remove_first_four_pages(input_pdf_path, output_pdf_path):
 
     with open(output_pdf_path, 'wb') as output_pdf:
         writer.write(output_pdf)
+
+
 
 
 def wait_for_downloads(download_dir, timeout=60):
@@ -92,6 +97,7 @@ def wait_for_downloads(download_dir, timeout=60):
                         time.sleep(1)  # Wait a moment to see if it is still downloading
                         if os.path.getsize(file_path) > 0:  # Still has content
                             print(f"Downloaded: {filename}")
+
                             
                             # Remove the first four pages of the PDF
                             remove_first_four_pages(file_path, modified_file_path)
@@ -99,14 +105,16 @@ def wait_for_downloads(download_dir, timeout=60):
                             
                              # Upload the file to S3
                             file_url = upload_to_s3(modified_file_path, filename)
+
                             if file_url:
                                 # Generate a unique ObjectId for the document
                                 document_id = str(ObjectId())
                                 
+
                                 # Clean up local files after upload
                                 os.remove(file_path)
                                 os.remove(modified_file_path)
-                                
+
                                 # Return ObjectId and file URL
                                 return {
                                     "success": True,
@@ -114,11 +122,13 @@ def wait_for_downloads(download_dir, timeout=60):
                                     "s3_link": file_url
                                 }
                                 
+
                                 
                             else:
                                 os.remove(file_path)
                                 os.remove(modified_file_path)
                                 
+
                                 return {
                                     "success": False,
                                     "error": upload_result['error']
