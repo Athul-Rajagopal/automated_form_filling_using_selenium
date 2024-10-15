@@ -20,24 +20,36 @@ def fill_form(user_data):
     chrome_options = Options()
     # chrome_options.add_argument("--headless")
     
-    # Use the Service class to specify the driver path
-    chrome_service = Service(r"C:\chromedriver.exe")
-    chrome_options.page_load_strategy = 'eager' 
+    # chrome_options.page_load_strategy = 'eager'
+    chrome_options.page_load_strategy = 'normal' 
     
     download_dir = r"C:\Users\athul\Downloads\passport"  # Change this to your desired download directory
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")  # Disable GPU rendering to avoid issues
+    chrome_options.add_argument("--disable-software-rasterizer")
+    chrome_options.add_argument("--disable-extensions")  # Disable all extensions
+    chrome_options.add_argument("--disable-plugins")  # Disable plugins
+    chrome_options.add_argument("--disable-infobars")  # Disable infobars
+    
     chrome_options.add_experimental_option("prefs", {
         "download.default_directory": download_dir,  # Set download directory
         "download.prompt_for_download": False,  # Disable the download prompt
         "plugins.always_open_pdf_externally": True  # Open PDFs externally
     })
 
+    # Use the Service class to specify the driver path
+    # chrome_service = Service(r"C:\chromedriver.exe")
+    chrome_service = Service(r"C:\chromw\chromedriver.exe")
     # Pass the service object to the Chrome WebDriver
-    driver = webdriver.Chrome(options=chrome_options)  
+    driver = webdriver.Chrome(service=chrome_service, options=chrome_options)  
     
     try:
 # Page 1
         # Navigate to the form page
-        driver.get("https://pptform.state.gov/")     
+        driver.get("https://pptform.state.gov/")  
+        WebDriverWait(driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')   
         
         # Locate the checkbox using XPath and click it
         wait = WebDriverWait(driver, 60)  # Wait up to 60 seconds
@@ -215,15 +227,28 @@ def fill_form(user_data):
             select_country(country_dropdown, user_data["permanentAddress"]["country"], driver)
             
             country = user_data["permanentAddress"].get("country").upper()
+            print(f"country_permanant : {country}")
             if country in ['CAN', 'USA']:
+                add_info = user_data['permanentAddress']
+                sts = add_info.get("state")
+                print(f"permanent_state {sts}")
+                
+                # # Wait for the state list to load before selecting country and state
+                WebDriverWait(driver, 60).until(
+                    EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_permanentStateList"]'))
+                )
+                
                 select_country_and_state(
                 country_code=country, 
-                state_abbreviation=user_data["permanentAddress"]["state"], 
+                state_abbreviation=sts, 
                 driver=driver, 
                 country_xpath='//*[@id="PassportWizard_addressStep_permanentCountryList"]',  # Country dropdown XPath
-                state_xpath='//*[@id="PassportWizard_addressStep_permanentStateList"]'       # State dropdown XPath
+                state_xpath='//*[@id="PassportWizard_addressStep_permanentStateList"]',       # State dropdown XPath
+                permanent_address=True
             )
             # zipcode
+            # Wait for JavaScript to finish executing
+            WebDriverWait(driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')
             wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_addressStep_permanentZipTextBox'))).send_keys(user_data['permanentAddress']['zipCode'])
         
         # choosing prefered communication medium    
@@ -281,21 +306,32 @@ def fill_form(user_data):
 # page 5     
         # travel plans
         
-        date_of_trip_str = user_data['travelPlans'].get('travelDate').get('$date')
+        date_of_trip_str = user_data.get('travelPlans').get('travelDate').get('$date')
         if date_of_trip_str:
             date_of_trip = datetime.strptime(date_of_trip_str, "%Y-%m-%dT%H:%M:%S.%fZ")
             formatted_dot = date_of_trip.strftime("%m-%d-%Y")
             wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_travelPlans_TripDateTextBox'))).send_keys(formatted_dot)
+            # Unfocus the field by clicking somewhere else (e.g., body)
+            driver.find_element(By.TAG_NAME, 'body').click()
+            time.sleep(2) 
         
-        date_of_return_str = user_data['travelPlans'].get('returnDate').get('$date')
+        date_of_return_str = user_data.get('travelPlans').get('returnDate').get('$date')
         if date_of_return_str:
+            print("return date str", date_of_return_str)
             date_of_return = datetime.strptime(date_of_return_str, "%Y-%m-%dT%H:%M:%S.%fZ")
             formatted_dor = date_of_return.strftime("%m-%d-%Y")
-            wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_travelPlans_TripDateTextBox'))).send_keys(formatted_dor)
+            print("return data", formatted_dor)
+            return_date_input = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_travelPlans_TripDateReturnTextBox"]')))
+            return_date_input.click()  # Focus on the field
+            return_date_input.send_keys(formatted_dor)
+            time.sleep(2)
         ### travel destination is to be filled
-        travel_destination = user_data['travelPlans'].get("travelDestination")
+        travel_destination = user_data.get('travelPlans').get("travelDestination")
         if travel_destination:
-            wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_travelPlans_TripDateTextBox'))).send_keys(travel_destination)
+            print("destinaiton", travel_destination)
+            travel_destination_input = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_travelPlans_CountriesTextBox"]')))
+            travel_destination_input.click()
+            travel_destination_input.send_keys(travel_destination)
         
         # click next
         next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
@@ -624,6 +660,36 @@ def fill_form(user_data):
         
 # page 9
         # other names
+        
+        other_names = user_data.get("personalInfo").get("allPreviousNames", [])
+        
+        if other_names:
+            for index, name in enumerate(other_names):
+                
+                split_names = name.strip().split(" ", 1)  
+                first_name = split_names[0]  
+                last_name = split_names[1] if len(split_names) > 1 else ""  
+
+                # Wait for the first name field and fill it
+                first_name_input = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_otherNameStep_addOtherFirstTextBox')))
+                first_name_input.send_keys(first_name)
+
+                # Wait for the last name field and fill it
+                last_name_input = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_otherNameStep_addOtherLastTextBox')))
+                last_name_input.send_keys(last_name)
+
+                time.sleep(2)
+                # If there are more names to enter, click the 'Add More' button
+                if index < len(other_names) - 1:
+                    add_button = wait.until(EC.element_to_be_clickable((By.ID, 'PassportWizard_otherNameStep_addButton')))
+                    add_button.click()
+
+                    # Wait for the new fields to appear and stabilize before the next iteration
+                    time.sleep(3)
+                    wait.until(EC.presence_of_element_located((By.ID, f'PassportWizard_otherNameStep_addOtherFirstTextBox')))
+                
+        
+        
         input_id='PassportWizard_otherNameStep_addOtherFirstTextBox'
         wait.until(EC.presence_of_element_located((By.ID, input_id)))
         input_field = driver.find_element(By.ID, input_id)
@@ -689,7 +755,7 @@ def fill_form(user_data):
             
     except Exception as e:
         print(f"An error occurred: {e}", flush=True)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e), "success":False}), 500
 
     finally:
         driver.quit()

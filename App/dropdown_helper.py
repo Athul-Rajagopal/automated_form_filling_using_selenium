@@ -1,6 +1,6 @@
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import StaleElementReferenceException, TimeoutException, UnexpectedAlertPresentException
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException, UnexpectedAlertPresentException, WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.alert import Alert
 import time
@@ -136,14 +136,27 @@ def select_state(select_element, state_abbreviation, driver, state_xpath):
             break
 
 
-def select_country_and_state(country_code, state_abbreviation, driver, country_xpath, state_xpath):
+def select_country_and_state(country_code, state_abbreviation, driver, country_xpath, state_xpath, permanent_address=False):
     """wait for the state dropdown to update, then select the state."""
     try:
+        if permanent_address and country_code == 'USA':
+            
+            state_dropdown = WebDriverWait(driver, 60).until(
+                EC.presence_of_element_located((By.XPATH, state_xpath))
+            )
+            print(f"State dropdown refreshed and ready.")
+
+            # Select the state
+            select_state(state_dropdown, state_abbreviation, driver, state_xpath)
+            
+            
+        if not driver.window_handles:
+            raise WebDriverException("Browser window is closed or session is not available.")
         
-        print(f"hai this is ashmila {state_xpath}")
         # Wait for the state dropdown to be stale (reloading) after selecting the country
         WebDriverWait(driver, 60).until(EC.staleness_of(driver.find_element(By.XPATH, state_xpath)))
 
+        print(f"hai this is ashmila {state_xpath}")
         # Wait for the new state dropdown to be present and visible
         state_dropdown = WebDriverWait(driver, 60).until(
             EC.presence_of_element_located((By.XPATH, state_xpath))
@@ -155,6 +168,14 @@ def select_country_and_state(country_code, state_abbreviation, driver, country_x
 
     except TimeoutException as e:
         print(f"Timeout waiting for dropdown to update. Error: {e}")
+        
+    except UnexpectedAlertPresentException:
+        # Handle the alert about missing state selection
+        alert = driver.switch_to.alert
+        alert_text = alert.text
+        print(f"Alert detected: {alert_text}")
+        alert.accept()
+        
     except Exception as e:
         print(f"An error occurred: {e}")
 
