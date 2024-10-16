@@ -23,7 +23,7 @@ AWS_SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 S3_REGION = os.getenv('AWS_REGION')
 
-print({"accesskey": AWS_ACCESS_KEY, "secret": AWS_SECRET_KEY, "bucket": S3_BUCKET_NAME, "region": S3_REGION})
+# print({"accesskey": AWS_ACCESS_KEY, "secret": AWS_SECRET_KEY, "bucket": S3_BUCKET_NAME, "region": S3_REGION})
 
 def upload_to_s3(file_path, file_name):
     """
