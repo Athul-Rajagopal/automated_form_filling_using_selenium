@@ -23,7 +23,8 @@ def fill_form(user_data):
     # chrome_options.page_load_strategy = 'eager'
     chrome_options.page_load_strategy = 'normal' 
     
-    download_dir = r"C:\Users\athul\Downloads\passport"  # Change this to your desired download directory
+    # download_dir = r"C:\Users\athul\Downloads\passport"  # Change this to your desired download directory
+    download_dir = "/root/passport-automation/downloads"
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
@@ -41,7 +42,8 @@ def fill_form(user_data):
 
     # Use the Service class to specify the driver path
     # chrome_service = Service(r"C:\chromedriver.exe")
-    chrome_service = Service(r"C:\chromw\chromedriver.exe")
+    # chrome_service = Service(r"C:\chromw\chromedriver.exe")
+    chrome_service = Service("/usr/local/bin/chromedriver") 
     # Pass the service object to the Chrome WebDriver
     driver = webdriver.Chrome(service=chrome_service, options=chrome_options)  
     
