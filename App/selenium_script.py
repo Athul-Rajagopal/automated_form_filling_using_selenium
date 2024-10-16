@@ -41,9 +41,8 @@ def fill_form(user_data):
     })
 
     # Use the Service class to specify the driver path
-    # chrome_service = Service(r"C:\chromedriver.exe")
     # chrome_service = Service(r"C:\chromw\chromedriver.exe")
-    chrome_service = Service("/usr/local/bin/chromedriver") 
+    chrome_service = Service("/usr/local/bin/chromedriver-linux64/chromedriver") 
     # Pass the service object to the Chrome WebDriver
     driver = webdriver.Chrome(service=chrome_service, options=chrome_options)  
     
