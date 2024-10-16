@@ -23,6 +23,7 @@ AWS_SECRET_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME')
 S3_REGION = os.getenv('AWS_REGION')
 
+print({"accesskey": AWS_ACCESS_KEY, "secret": AWS_SECRET_KEY, "bucket": S3_BUCKET_NAME, "region": S3_REGION})
 
 def upload_to_s3(file_path, file_name):
     """
@@ -42,6 +43,7 @@ def upload_to_s3(file_path, file_name):
         
         # Upload the file
         s3_client.upload_file(file_path, S3_BUCKET_NAME, unique_filename)
+        print(f"Successfully uploaded {file_path} to S3 as {unique_filename}.")
 
         # Generate the file URL
         file_url = f"https://{S3_BUCKET_NAME}.s3.{S3_REGION}.amazonaws.com/{unique_filename}"
@@ -101,11 +103,11 @@ def wait_for_downloads(download_dir, timeout=60):
                             
                             # Remove the first four pages of the PDF
                             remove_first_four_pages(file_path, modified_file_path)
-                            
+                            print("removed 4 pages")
                             
                              # Upload the file to S3
                             file_url = upload_to_s3(modified_file_path, filename)
-
+                            print("file uploaded")
                             if file_url:
                                 # Generate a unique ObjectId for the document
                                 document_id = str(ObjectId())
