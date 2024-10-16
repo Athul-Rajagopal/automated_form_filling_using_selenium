@@ -18,7 +18,6 @@ from download_helper import wait_for_downloads
 
 def fill_form(user_data):
     chrome_options = Options()
-    # chrome_options.add_argument("--headless")
     
     # chrome_options.page_load_strategy = 'eager'
     chrome_options.page_load_strategy = 'normal' 
@@ -173,19 +172,18 @@ def fill_form(user_data):
         # mailing address
         ADDRESS_CHAR_LIMIT = 40
         
-        mailing_address = user_data['addressInfo']['mailingAddress']
+        mailing_address_line1 = user_data['addressInfo']['line1']
         
         mail_street_1 = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_mailStreetTextBox"]')))
+    
+        mail_street_1.send_keys(mailing_address_line1)
         
-        if len(mailing_address) <= ADDRESS_CHAR_LIMIT:
-            mail_street_1.send_keys(mailing_address)
-        else:
-            # Split the address if it exceeds the limit
-            mail_street_1.send_keys(mailing_address[:ADDRESS_CHAR_LIMIT])
+        mailing_address_line2 = user_data['addressInfo'].get('line2')    
+        if mailing_address_line2:    
             
             # Fill the second field with the remaining address
             mail_street_2 = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_mailStreet2TextBox"]')))
-            mail_street_2.send_keys(mailing_address[ADDRESS_CHAR_LIMIT:])
+            mail_street_2.send_keys(mailing_address_line2)
         
         # city
         wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_mailCityTextBox"]'))).send_keys(user_data['addressInfo']['city'])
@@ -210,12 +208,24 @@ def fill_form(user_data):
         # zip code
         wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_addressStep_mailZipTextBox'))).send_keys(user_data['addressInfo']['zipCode'])
         
+        # incare of
+        incare_of = user_data["addressInfo"].get("inCareOf")
+        if incare_of:
+            wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_addressStep_mailCareOfTextBox'))).send_keys(incare_of)
+            
         # compare mailing address with permanant address
-        mailing_address = user_data['addressInfo']['mailingAddress'].strip()
-        permanent_address = user_data['permanentAddress']['permanentAddress'].strip()
+        mailing_address = user_data['addressInfo']['line1'].strip()
+        permanent_address = user_data['permanentAddress']['line1'].strip()
         if mailing_address == permanent_address:
+            
             yes_radio_button = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_addressStep_permanentAddressList_0"]')))
             yes_radio_button.click()
+            print("yes button clicked")
+            
+            WebDriverWait(driver, 60).until(
+                EC.invisibility_of_element_located((By.CLASS_NAME, 'TransparentDiv'))
+            )
+            
         # permanent address
         else:
             no_radio_button = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_addressStep_permanentAddressList_1"]')))
@@ -223,6 +233,9 @@ def fill_form(user_data):
             
             permanent_address = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_permanentStreetTextBox"]'))).send_keys(permanent_address)
             
+            permanent_address_line2 = user_data["permanentAddress"].get("line2")
+            if permanent_address_line2:
+                wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_permanentApartmentTextBox"]'))).send_keys(permanent_address_line2)
             # city
             wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_permanentCityTextBox"]'))).send_keys(user_data['permanentAddress']['city'])
             
@@ -256,9 +269,19 @@ def fill_form(user_data):
             WebDriverWait(driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')
             wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_addressStep_permanentZipTextBox'))).send_keys(user_data['permanentAddress']['zipCode'])
         
-        # choosing prefered communication medium    
-        mail_prefference_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_addressStep_CommunicateMail"]')))
-        mail_prefference_radio.click()
+        # choosing prefered communication medium
+            
+        try:
+            mail_prefference_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_addressStep_CommunicateMail"]')))
+            mail_prefference_radio.click()
+            print("mail button clicked")
+        except Exception as e:
+            print(f"Mail preference radio button click error: {e}")
+            # Retry clicking after a short wait
+            time.sleep(2)  # Small delay before retry
+            mail_prefference_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_addressStep_CommunicateMail"]')))
+            mail_prefference_radio.click()
+            print("mail button clicked after retry")
             
         # filling email
         wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_emailTextBox"]'))).send_keys(user_data['contactInfo']['emailAddress'])
