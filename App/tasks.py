@@ -33,7 +33,7 @@ def fill_form_task(user_data):
         
         # If form filling is successful, send success notification to the webhook
         payload = {
-            "status": "SUCCESS",
+            "success": True,
             "message": "Form filled successfully.",
             "result": result  # Result of the form-filling task, e.g., the download URL
         }
@@ -43,7 +43,7 @@ def fill_form_task(user_data):
     except Exception as e:
         # If any error occurs (e.g., Selenium or file upload failure), send error notification
         payload = {
-            "status": "FAILURE",
+            "success": False,
             "message": "An error occurred during form filling.",
             "error": str(e)
         }

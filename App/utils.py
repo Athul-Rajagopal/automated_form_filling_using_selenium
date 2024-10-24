@@ -4,7 +4,7 @@ import json
 def send_failure_response(webhook_url, message, error_details):
     # Send a failure notification to the frontend with error details
     payload = {
-        "status": "FAILURE",
+        "success": False,
         "message": message,
         "error": error_details
     }
