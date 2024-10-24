@@ -6,7 +6,12 @@ import redis
 
 # Configure Celery with Redis as both the broker and the result backend
 app = Celery('form_filling_tasks', broker='redis://localhost:6379/0', backend='redis://localhost:6379/0')
-app.conf.task_time_limit = 600 
+# app.conf.task_time_limit = 600 
+app.conf.update(
+    task_soft_time_limit=600,  
+    task_time_limit=1200,      
+)
+
 
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
