@@ -38,7 +38,7 @@ def fill_form_task(user_data):
             "result": result  # Result of the form-filling task, e.g., the download URL
         }
         headers = {'Content-Type': 'application/json'}
-        requests.post(webhook_url, data=json.dumps(payload), headers=headers)
+        requests.post(webhook_url, data=json.dumps(payload), headers=headers, verify=False)
 
     except Exception as e:
         # If any error occurs (e.g., Selenium or file upload failure), send error notification
@@ -48,6 +48,6 @@ def fill_form_task(user_data):
             "error": str(e)
         }
         headers = {'Content-Type': 'application/json'}
-        requests.post(webhook_url, data=json.dumps(payload), headers=headers)
+        requests.post(webhook_url, data=json.dumps(payload), headers=headers, verify=False)
 
     return result
