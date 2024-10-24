@@ -9,4 +9,4 @@ def send_failure_response(webhook_url, message, error_details):
         "error": error_details
     }
     headers = {'Content-Type': 'application/json'}
-    requests.post(webhook_url, data=json.dumps(payload), headers=headers)
+    requests.post(webhook_url, data=json.dumps(payload), headers=headers, verify=False)
