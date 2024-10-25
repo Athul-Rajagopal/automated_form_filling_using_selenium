@@ -36,14 +36,25 @@ def fill_form_task(user_data):
         # Fill the form using Selenium (this part can raise exceptions)
         result = fill_form(user_data, webhook_url)
         
-        # If form filling is successful, send success notification to the webhook
-        payload = {
-            "success": True,
-            "message": "Form filled successfully.",
-            "result": result  # Result of the form-filling task, e.g., the download URL
-        }
-        headers = {'Content-Type': 'application/json'}
-        requests.post(webhook_url, data=json.dumps(payload), headers=headers, verify=False)
+        if result:
+        
+            # If form filling is successful, send success notification to the webhook
+            payload = {
+                "success": True,
+                "message": "Form filled successfully.",
+                "result": result  # Result of the form-filling task, e.g., the download URL
+            }
+            headers = {'Content-Type': 'application/json'}
+            requests.post(webhook_url, data=json.dumps(payload), headers=headers, verify=False)
+            
+        else:
+            payload = {
+                "success": False,
+                "message": "An error occurred during form filling.",
+                "error": str(e)
+            }
+            headers = {'Content-Type': 'application/json'}
+            requests.post(webhook_url, data=json.dumps(payload), headers=headers, verify=False) 
 
     except Exception as e:
         # If any error occurs (e.g., Selenium or file upload failure), send error notification
