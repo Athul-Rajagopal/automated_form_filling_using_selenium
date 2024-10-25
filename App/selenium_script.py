@@ -53,7 +53,7 @@ def fill_form(user_data, webhook_url):
         WebDriverWait(driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')   
         
         # Locate the checkbox using XPath and click it
-        wait = WebDriverWait(driver, 60)  # Wait up to 60 seconds
+        wait = WebDriverWait(driver, 120)  # Wait up to 60 seconds
         privacy_checkbox = wait.until(EC.element_to_be_clickable((By.ID, 'chkPrivacy')))
         privacy_checkbox.click()
         
@@ -202,24 +202,28 @@ def fill_form(user_data, webhook_url):
             
             # state
             country = user_data["addressInfo"].get("country").upper()
-            if country in ['CAN', 'USA']:
+            # if country in ['CAN', 'USA']:
 
                 
-                select_country_and_state(
-                    country_code=country, 
-                    state_abbreviation=user_data["addressInfo"]["state"], 
-                    driver=driver, 
-                    country_xpath='//*[@id="PassportWizard_addressStep_mailCountryList"]',  # Country dropdown XPath
-                    state_xpath='//*[@id="PassportWizard_addressStep_mailStateList"]'       # State dropdown XPath
-                )
+            select_country_and_state(
+                country_code=country, 
+                state_abbreviation=user_data["addressInfo"]["state"], 
+                driver=driver, 
+                country_xpath='//*[@id="PassportWizard_addressStep_mailCountryList"]',  # Country dropdown XPath
+                state_xpath='//*[@id="PassportWizard_addressStep_mailStateList"]'       # State dropdown XPath
+            )
             
-            # zip code
-            wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_addressStep_mailZipTextBox'))).send_keys(user_data['addressInfo']['zipCode'])
+            time.sleep(3)
+                # Zip Code - Only fill if country is CAN or USA
+            WebDriverWait(driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')
+            zip_code_field = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_addressStep_mailZipTextBox')))
+            zip_code_field.send_keys(user_data['addressInfo']['zipCode'])
             
             # incare of
             incare_of = user_data["addressInfo"].get("inCareOf")
             if incare_of:
                 wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_addressStep_mailCareOfTextBox'))).send_keys(incare_of)
+                     
             
         except Exception as e:
             send_failure_response(webhook_url, "Failed to fill mailing address. Please try again.", str(e)) 
@@ -259,23 +263,23 @@ def fill_form(user_data, webhook_url):
                 country = user_data["permanentAddress"].get("country").upper()
 
                 print(f"country_permanant : {country}")
-                if country in ['CAN', 'USA']:
-                    add_info = user_data['permanentAddress']
-                    sts = add_info.get("state")
-                    print(f"permanent_state {sts}")
-                    
-                    # # Wait for the state list to load before selecting country and state
-                    WebDriverWait(driver, 60).until(
-                        EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_permanentStateList"]'))
-                    )
-                    
-                    select_country_and_state(
-                    country_code=country, 
-                    state_abbreviation=sts, 
-                    driver=driver, 
-                    country_xpath='//*[@id="PassportWizard_addressStep_permanentCountryList"]',  # Country dropdown XPath
-                    state_xpath='//*[@id="PassportWizard_addressStep_permanentStateList"]',       # State dropdown XPath
-                    permanent_address=True
+                # if country in ['CAN', 'USA']:
+                add_info = user_data['permanentAddress']
+                sts = add_info.get("state")
+                print(f"permanent_state {sts}")
+                
+                # # Wait for the state list to load before selecting country and state
+                WebDriverWait(driver, 60).until(
+                    EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_addressStep_permanentStateList"]'))
+                )
+                
+                select_country_and_state(
+                country_code=country, 
+                state_abbreviation=sts, 
+                driver=driver, 
+                country_xpath='//*[@id="PassportWizard_addressStep_permanentCountryList"]',  # Country dropdown XPath
+                state_xpath='//*[@id="PassportWizard_addressStep_permanentStateList"]',       # State dropdown XPath
+                permanent_address=True
                 )
                 # zipcode
                 # Wait for JavaScript to finish executing
