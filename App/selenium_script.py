@@ -740,9 +740,8 @@ def fill_form(user_data, webhook_url):
             if other_names:
                 for index, name in enumerate(other_names):
                     
-                    split_names = name.strip().split(" ", 1)  
-                    first_name = split_names[0]  
-                    last_name = split_names[1] if len(split_names) > 1 else ""  
+                    first_name = name.get("firstName", "")
+                    last_name = name.get("lastName", "")
 
                     # Wait for the first name field and fill it
                     first_name_input = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_otherNameStep_addOtherFirstTextBox')))
