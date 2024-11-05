@@ -42,7 +42,7 @@ def upload_to_s3(file_path, file_name):
         )
         
         # Upload the file
-        s3_client.upload_file(file_path, S3_BUCKET_NAME, unique_filename)
+        s3_client.upload_file(file_path, S3_BUCKET_NAME, unique_filename, ExtraArgs={'ContentType': 'application/pdf'})
         print(f"Successfully uploaded {file_path} to S3 as {unique_filename}.")
 
         # Generate the file URL
