@@ -169,12 +169,26 @@ def fill_form(user_data, webhook_url):
             
             
             # submit
-            about_form_submit_button = wait.until(EC.element_to_be_clickable((By.ID, 'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
-            about_form_submit_button.click()
+            # Wait for any overlays to disappear
+            WebDriverWait(driver, 10).until(
+                EC.invisibility_of_element_located((By.CLASS_NAME, 'TransparentDiv'))
+            )
+            
+            # Find and wait for the button
+            about_form_submit_button = wait.until(
+                EC.presence_of_element_located((By.ID, 'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton'))
+            )
+            
+            # Scroll into view
+            driver.execute_script("arguments[0].scrollIntoView(true);", about_form_submit_button)
+            time.sleep(1)  # Allow time for scrolling
+
+            driver.execute_script("arguments[0].click();", about_form_submit_button)
             
             print("waiting for page 4")
         
         except Exception as e:
+            print(f"Failed to filled personal details. Please try again. Error: {e}")
             send_failure_response(webhook_url, "Failed to filled personal details. Please try again.", str(e)) 
             driver.quit()
         
@@ -829,16 +843,155 @@ def fill_form(user_data, webhook_url):
             driver.quit()
         
 # page 11
+        try:
+            # Passport Options
+            passport_option = user_data.get('productInfo',False).get('passportOption',False)
+            if passport_option:
+                # book
+                if passport_option == "book":
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_bookFee"]'))) 
+                    driver.execute_script("arguments[0].click();", radio)
+                    is_large_book = user_data.get('productInfo').get('largeBook',False)
+                    
+                    if is_large_book:
+                       # First wait for the element to be present in DOM
+                        WebDriverWait(driver, 10).until(
+                            EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_feesStep_bookType52"]'))
+                        )
+                        
+                        # Then wait for it to be visible
+                        WebDriverWait(driver, 10).until(
+                            EC.visibility_of_element_located((By.XPATH, '//*[@id="PassportWizard_feesStep_bookType52"]'))
+                        )
+                        
+                        # Finally wait for it to be clickable
+                        checkbox = WebDriverWait(driver, 10).until(
+                            EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_bookType52"]'))
+                        )
+                        
+                        # Ensure any loading overlays are gone
+                        WebDriverWait(driver, 10).until(
+                            EC.invisibility_of_element_located((By.CLASS_NAME, 'TransparentDiv'))
+                        )
+                        
+                        # Scroll into view and click
+                        driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
+                        time.sleep(0.5)  # Wait for any animations
+                        checkbox.click()
+                # card
+                elif passport_option == "card":
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_cardFee"]'))) 
+                    driver.execute_script("arguments[0].click();", radio)
+                # both
+                elif passport_option == "both":
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_bookCardFee"]'))) 
+                    driver.execute_script("arguments[0].click();", radio)
+                    is_large_book = user_data.get('productInfo').get('largeBook',False)
+                    if is_large_book:
+                       # First wait for the element to be present in DOM
+                        WebDriverWait(driver, 10).until(
+                            EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_feesStep_bothBookType52"]'))
+                        )
+                        
+                        # Then wait for it to be visible
+                        WebDriverWait(driver, 10).until(
+                            EC.visibility_of_element_located((By.XPATH, '//*[@id="PassportWizard_feesStep_bothBookType52"]'))
+                        )
+                        
+                        # Finally wait for it to be clickable
+                        checkbox = WebDriverWait(driver, 10).until(
+                            EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_bothBookType52"]'))
+                        )
+                        
+                        # Ensure any loading overlays are gone
+                        WebDriverWait(driver, 10).until(
+                            EC.invisibility_of_element_located((By.CLASS_NAME, 'TransparentDiv'))
+                        )
+                        
+                        # Scroll into view and click
+                        driver.execute_script("arguments[0].scrollIntoView(true);", checkbox)
+                        time.sleep(0.5)  # Wait for any animations
+                        checkbox.click()
+            else:
+                print("not getting passport options")
+                send_failure_response(webhook_url, "not getting passport options", "not getting passport options") 
+                driver.quit()
 
-        # payment selection
-        # second option
-        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_cardFee"]'))) 
-        driver.execute_script("arguments[0].click();", radio)
-        
-        button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_FinishNavigationTemplateContainerID_FinishButton')))
-        driver.execute_script("arguments[0].scrollIntoView();", button)
-        time.sleep(1) 
-        driver.execute_script("arguments[0].click();", button)
+            # Processing Methods
+            process_method = user_data.get('productInfo', False).get('processingMethod', False)
+            if process_method:
+                if process_method == 'routine':
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_routineService"]'))) 
+                elif process_method == 'expedited':
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_expeditedService"]'))) 
+                elif process_method == 'agency':
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_expeditedAgencyService"]'))) 
+
+                driver.execute_script("arguments[0].click();", radio)
+            else:
+                print("not getting processing method")
+                send_failure_response(webhook_url, "not getting processing method", "not getting processing method") 
+                driver.quit()
+                
+            # Delivery Methods
+            book_delivery_method = user_data.get('productInfo', False).get('deliveryMethod', False).get('book', False)
+            passport_option = user_data.get('productInfo', False).get('passportOption', False)
+
+
+            if passport_option == "both":
+                
+                if book_delivery_method == 'standard':
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_bookPriorityMail"]'))) 
+                elif book_delivery_method == 'one-two-day':
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_bookOverniteMail"]'))) 
+                driver.execute_script("arguments[0].click();", radio)
+
+                radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_cardFirstClassRadioButton"]'))) 
+                driver.execute_script("arguments[0].click();", radio)
+
+            elif passport_option == "book":
+
+                if book_delivery_method == 'standard':
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_bookPriorityMail"]'))) 
+                elif book_delivery_method == 'one-two-day':
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_bookOverniteMail"]'))) 
+                driver.execute_script("arguments[0].click();", radio)
+
+            elif passport_option == "card":
+
+                radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_feesStep_cardFirstClassRadioButton"]'))) 
+                driver.execute_script("arguments[0].click();", radio)
+
+            # Additional Fees
+            additional_fees = user_data.get('productInfo', False).get('additionalFees', False).get('fileSearch', False)
+            if additional_fees:
+                # checkbox = wait.until(EC.element_to_be_clickable((By.NAME, 'PassportWizard$feesStep$addOptFileSearchCheckBox')))
+                # checkbox.click()
+
+                 # Wait for any overlay to disappear first
+                WebDriverWait(driver, 10).until(
+                    EC.invisibility_of_element_located((By.CLASS_NAME, 'TransparentDiv'))
+                )
+                
+                # Wait for the checkbox to be present and visible
+                checkbox = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.NAME, 'PassportWizard$feesStep$addOptFileSearchCheckBox'))
+                )
+                
+                # Scroll the checkbox into view
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", checkbox)
+                time.sleep(1)  # Allow time for scrolling
+                driver.execute_script("arguments[0].click();", checkbox)
+
+            button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_FinishNavigationTemplateContainerID_FinishButton')))
+            driver.execute_script("arguments[0].scrollIntoView();", button)
+            time.sleep(1) 
+            driver.execute_script("arguments[0].click();", button)
+
+        except Exception as e:
+            print(f"Error filling passport options: {e}")
+            send_failure_response(webhook_url, "Failed to fill passport options. Please try again.", str(e)) 
+            driver.quit()
         
         print("waiting for page 12")
 
