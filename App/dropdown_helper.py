@@ -231,3 +231,13 @@ def select_state_without_country(driver, state_abbreviation, state_xpath):
         except Exception as e:
             print(f"Error selecting state '{state_abbreviation}': {e}")
             break 
+
+
+def select_how_passport_lost(select_element, lost_count):
+    select = Select(select_element)
+    lost_count = int(lost_count)
+
+    if lost_count == 1:
+        select.select_by_visible_text('1')
+    elif lost_count == 2:
+        select.select_by_visible_text('2')

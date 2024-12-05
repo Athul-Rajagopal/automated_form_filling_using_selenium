@@ -12,6 +12,7 @@ import logging
 from flask import jsonify
 from download_helper import wait_for_downloads
 from utils import send_failure_response
+from lost_or_stolen import lost_or_stolen
 
 
 
@@ -469,8 +470,7 @@ def fill_form(user_data, webhook_url):
         
         print("waiting for page 7")
         
-# page 7
-
+# page 7  
         # # passport history
         # passport_history = user_data.get("passportHistory").get("hasPassportCardOrBook", "none")
         
@@ -599,16 +599,50 @@ def fill_form(user_data, webhook_url):
         #     # book number
         #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingCardNumber'))).send_keys(user_data["passportHistory"]["passportCardDetails"]["number"])
 
-        
-        # else:
-            
-        type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveNone"]')))
-        driver.execute_script("arguments[0].click();", type_radio)
-        
-        next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
-        driver.execute_script("arguments[0].click();", next_button)
-        
-        print("waiting for page 8")
+        # Your Most Recent Passport
+        try:
+            passport_history = user_data.get("passportHistory", False).get('hasPassportCardOrBook', False)
+            if passport_history == "book":
+                radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveBook"]')))
+                driver.execute_script("arguments[0].click();", radio)
+                passport_book_status = user_data.get("passportHistory").get("passportBookDetails").get("status")
+                if passport_book_status == "lost":
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookLost"]')))
+                    driver.execute_script("arguments[0].click();", radio)
+                    has_reported = user_data.get("passportHistory").get("passportBookDetails").get("hasReportedLostOrStolen")
+                    if has_reported:
+                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_ReportLostBookYesRadioButton"]')))
+                    else:
+                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_ReportLostBookNoRadioButton"]')))
+                    
+                    driver.execute_script("arguments[0].click();", radio)
+                    next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
+                    driver.execute_script("arguments[0].click();", next_button)
+                    alert = WebDriverWait(driver, 10).until(EC.alert_is_present())
+                    alert.accept()
+                    is_older_than_15_years = user_data.get("passportHistory").get("passportBookDetails").get("isOlderThan15Years")
+                    print(f"is_older_than_15_years: {is_older_than_15_years}")
+                    if is_older_than_15_years == 'yes':
+                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredYesRadioButton"]')))
+                    elif is_older_than_15_years == 'no':
+                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredNoRadioButton"]')))
+                    elif is_older_than_15_years == 'unknown':
+                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredUnknownRadioButton"]')))
+                    driver.execute_script("arguments[0].click();", radio)
+
+            else:
+                type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveNone"]')))
+                driver.execute_script("arguments[0].click();", type_radio)
+
+            if is_older_than_15_years == 'no' or is_older_than_15_years == 'unknown':
+                lost_or_stolen(driver, user_data)
+            else:
+                next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
+                driver.execute_script("arguments[0].click();", next_button)
+
+            print("waiting for page 8")
+        except Exception as e:
+            print("No radio button found",str(e))
         
 # page 8
 
@@ -987,6 +1021,12 @@ def fill_form(user_data, webhook_url):
             driver.execute_script("arguments[0].scrollIntoView();", button)
             time.sleep(1) 
             driver.execute_script("arguments[0].click();", button)
+
+            # Check for alert
+            passport_history = user_data.get("passportHistory", False).get('hasPassportCardOrBook', False)
+            if passport_history != 'both' and passport_option != 'both' and passport_history != passport_option:
+                alert = WebDriverWait(driver, 10).until(EC.alert_is_present())
+                alert.accept()
 
         except Exception as e:
             print(f"Error filling passport options: {e}")
