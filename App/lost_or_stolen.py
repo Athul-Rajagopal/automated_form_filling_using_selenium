@@ -13,10 +13,14 @@ def lost_or_stolen(driver, user_data):
         print("enter lost or stolen")
         # Are you reporting your own valid lost or stolen U.S. passport? 
         is_own_passport = user_data.get('lostInfo').get('isOwnPassport',False)
+        print(f"is_own_passport: {is_own_passport}")
         if is_own_passport:
             radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_lostStolenStep_reporterYesRadioButton"]')))
             driver.execute_script("arguments[0].click();", radio)
         else:
+            radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_lostStolenStep_reporterNoRadioButton"]')))
+            driver.execute_script("arguments[0].click();", radio)
+
             # reporter first name
             reporter_first_name = user_data.get('lostInfo').get('reporterFirstName')
             wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_lostStolenStep_reporterFirstNameTextBox'))).send_keys(reporter_first_name)

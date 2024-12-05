@@ -395,7 +395,6 @@ def fill_form(user_data, webhook_url):
             return_date = user_data.get('travelPlans', {}).get('returnDate')
             if return_date is not None and return_date is not False:
                 date_of_return_str = user_data.get('travelPlans').get('returnDate').get("$date")
-                print("return date str", date_of_return_str)
                 date_of_return = datetime.strptime(date_of_return_str, "%Y-%m-%dT%H:%M:%S.%fZ")
                 formatted_dor = date_of_return.strftime("%m-%d-%Y")
                 print("return data", formatted_dor)
@@ -614,27 +613,53 @@ def fill_form(user_data, webhook_url):
                         radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_ReportLostBookYesRadioButton"]')))
                     else:
                         radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_ReportLostBookNoRadioButton"]')))
+                    driver.execute_script("arguments[0].click();", radio)
+
+                    # first name and middle name
+                    first_name_and_middle_name = user_data.get("passportHistory").get("passportBookDetails").get("firstNameAndMiddleName", False)
+                    if first_name_and_middle_name:
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_firstNameOnBook'))).send_keys(first_name_and_middle_name)
                     
-                    driver.execute_script("arguments[0].click();", radio)
-                    next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
-                    driver.execute_script("arguments[0].click();", next_button)
-                    alert = WebDriverWait(driver, 10).until(EC.alert_is_present())
-                    alert.accept()
-                    is_older_than_15_years = user_data.get("passportHistory").get("passportBookDetails").get("isOlderThan15Years")
-                    print(f"is_older_than_15_years: {is_older_than_15_years}")
-                    if is_older_than_15_years == 'yes':
-                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredYesRadioButton"]')))
-                    elif is_older_than_15_years == 'no':
-                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredNoRadioButton"]')))
-                    elif is_older_than_15_years == 'unknown':
-                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredUnknownRadioButton"]')))
-                    driver.execute_script("arguments[0].click();", radio)
+                    # last name
+                    last_name = user_data.get("passportHistory").get("passportBookDetails").get("lastName", False)
+                    if last_name:
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_lastNameOnBook'))).send_keys(last_name)
+
+                    # book number
+                    book_number = user_data.get("passportHistory").get("passportBookDetails").get("number", False)
+                    if book_number:
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingBookNumber'))).send_keys(book_number)
+
+                    # issue date
+                    date_issue = user_data.get("passportHistory").get("passportBookDetails").get("issueDate", False)
+                    if date_issue:
+                        issue_date_str = user_data.get("passportHistory").get("passportBookDetails").get("issueDate").get("$date")
+                        issue_date = datetime.strptime(issue_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                        formatted_issue_date = issue_date.strftime("%m-%d-%Y")
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_BookIssueDate'))).send_keys(formatted_issue_date)
+                    else:
+                        next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
+                        driver.execute_script("arguments[0].click();", next_button)
+                        alert = WebDriverWait(driver, 10).until(EC.alert_is_present())
+                        alert.accept()
+
+                        is_older_than_15_years = user_data.get("passportHistory").get("passportBookDetails").get("isOlderThan15Years")
+                        print(f"is_older_than_15_years: {is_older_than_15_years}")
+                        if is_older_than_15_years == 'yes':
+                            radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredYesRadioButton"]')))
+                        elif is_older_than_15_years == 'no':
+                            radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredNoRadioButton"]')))
+                        elif is_older_than_15_years == 'unknown':
+                            radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredUnknownRadioButton"]')))
+                        driver.execute_script("arguments[0].click();", radio)
 
             else:
                 type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveNone"]')))
                 driver.execute_script("arguments[0].click();", type_radio)
 
-            if is_older_than_15_years == 'no' or is_older_than_15_years == 'unknown':
+            is_older_than_15_years = user_data.get("passportHistory").get("passportBookDetails").get("isOlderThan15Years", False)
+            if is_older_than_15_years == 'no' or is_older_than_15_years == 'unknown' or issue_date_str:
+                print("indide")
                 lost_or_stolen(driver, user_data)
             else:
                 next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
