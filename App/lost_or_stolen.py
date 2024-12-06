@@ -84,6 +84,7 @@ def lost_or_stolen(driver, user_data):
 
             #had previous lost
             had_previous_lost_police_report = user_data.get('lostInfo').get('previousPoliceReport', False)
+            print(f"had_previous_lost_police_report: {had_previous_lost_police_report}")
             if had_previous_lost_police_report:
                 radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_lostStolenStep_policeReportYesRadioButton2"]')))
             else:

@@ -13,7 +13,8 @@ from flask import jsonify
 from download_helper import wait_for_downloads
 from utils import send_failure_response
 from lost_or_stolen import lost_or_stolen
-
+from most_recent_passport_details import most_recent_passport_details
+from date_calculation_helper import is_within_8_years_6_days
 
 
 
@@ -470,144 +471,25 @@ def fill_form(user_data, webhook_url):
         print("waiting for page 7")
         
 # page 7  
-        # # passport history
-        # passport_history = user_data.get("passportHistory").get("hasPassportCardOrBook", "none")
-        
-        # if passport_history == "book":
-        #     type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveBook"]')))
-        #     driver.execute_script("arguments[0].click();", type_radio)
-        #     # status
-        #     sts = user_data.get("passportHistory").get("passportBookDetails").get("status")
-        #     if sts == "inPossession":
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookYes"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-        #     elif sts == "stolen":
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookStolen"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-        #     elif sts == "lost":
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookLost"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-        #     else:
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookDamaged"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-
-        #     #issued date
-        #     date_of_issue_str = user_data["passportHistory"].get("passportBookDetails")["issueDate"].get("$date")
-        #     date_of_issue = datetime.strptime(date_of_issue_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-        #     formatted_doi = date_of_issue.strftime("%m-%d-%Y")
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_BookIssueDate'))).send_keys(formatted_doi)
-            
-        #     # first name
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_firstNameOnBook'))).send_keys(user_data["passportHistory"]["passportBookDetails"]["firstName"])
-        #     # last name
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_lastNameOnBook'))).send_keys(user_data["passportHistory"]["passportBookDetails"]["lastName"])
-        #     # book number
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingBookNumber'))).send_keys(user_data["passportHistory"]["passportBookDetails"]["number"])
-            
-        # elif passport_history == "card":
-            
-        #     type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveCard"]')))
-        #     driver.execute_script("arguments[0].click();", type_radio)
-        #     # status
-        #     sts = user_data.get("passportHistory").get("passportCardDetails").get("status")
-        #     if sts == "inPossession":
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardYes"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-        #     elif sts == "stolen":
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardStolen"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-        #     elif sts == "lost":
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardLost"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-        #     else:
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardDamaged"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-
-        #     #issued date
-        #     date_of_issue_str = user_data["passportHistory"].get("passportCardDetails")["issueDate"].get("$date")
-        #     date_of_issue = datetime.strptime(date_of_issue_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-        #     formatted_doi = date_of_issue.strftime("%m-%d-%Y")
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_CardIssueDate'))).send_keys(formatted_doi)
-            
-        #     # first name
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_firstNameOnCard'))).send_keys(user_data["passportHistory"]["passportCardDetails"]["firstName"])
-        #     # last name
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_lastNameOnCard'))).send_keys(user_data["passportHistory"]["passportCardDetails"]["lastName"])
-        #     # book number
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingCardNumber'))).send_keys(user_data["passportHistory"]["passportCardDetails"]["number"])
-            
-        
-        # elif passport_history == "both":
-        #     type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveBoth"]')))
-        #     driver.execute_script("arguments[0].click();", type_radio)
-        #     ## book
-            
-        #     # status
-        #     sts = user_data.get("passportHistory").get("passportBookDetails").get("status")
-        #     if sts == "inPossession":
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookYes"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-        #     elif sts == "stolen":
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookStolen"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-        #     elif sts == "lost":
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookLost"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-        #     else:
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookDamaged"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-
-        #     #issued date
-        #     date_of_issue_str = user_data["passportHistory"].get("passportBookDetails")["issueDate"].get("$date")
-        #     date_of_issue = datetime.strptime(date_of_issue_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-        #     formatted_doi = date_of_issue.strftime("%m-%d-%Y")
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_BookIssueDate'))).send_keys(formatted_doi)
-            
-        #     # first name
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_firstNameOnBook'))).send_keys(user_data["passportHistory"]["passportBookDetails"]["firstName"])
-        #     # last name
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_lastNameOnBook'))).send_keys(user_data["passportHistory"]["passportBookDetails"]["lastName"])
-        #     # book number
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingBookNumber'))).send_keys(user_data["passportHistory"]["passportBookDetails"]["number"])
-            
-        #     # status
-        #     sts = user_data.get("passportHistory").get("passportCardDetails").get("status")
-        #     if sts == "inPossession":
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardYes"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-        #     elif sts == "stolen":
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardStolen"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-        #     elif sts == "lost":
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardLost"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-        #     else:
-        #         type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardDamaged"]')))
-        #         driver.execute_script("arguments[0].click();", type_radio)
-
-        #     #issued date
-        #     date_of_issue_str = user_data["passportHistory"].get("passportCardDetails")["issueDate"].get("$date")
-        #     date_of_issue = datetime.strptime(date_of_issue_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-        #     formatted_doi = date_of_issue.strftime("%m-%d-%Y")
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_CardIssueDate'))).send_keys(formatted_doi)
-            
-        #     # first name
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_firstNameOnCard'))).send_keys(user_data["passportHistory"]["passportCardDetails"]["firstName"])
-        #     # last name
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_lastNameOnCard'))).send_keys(user_data["passportHistory"]["passportCardDetails"]["lastName"])
-        #     # book number
-        #     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingCardNumber'))).send_keys(user_data["passportHistory"]["passportCardDetails"]["number"])
-
         # Your Most Recent Passport
         try:
             passport_history = user_data.get("passportHistory", False).get('hasPassportCardOrBook', False)
+
+            # Passport Book
             if passport_history == "book":
+
                 radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveBook"]')))
                 driver.execute_script("arguments[0].click();", radio)
                 passport_book_status = user_data.get("passportHistory").get("passportBookDetails").get("status")
-                if passport_book_status == "lost":
-                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookLost"]')))
+
+                # Lost or Stolen
+                if passport_book_status == "lost" or passport_book_status == "stolen":
+                    if passport_book_status == "lost":
+                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookLost"]')))
+                    elif passport_book_status == "stolen":
+                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookStolen"]')))
                     driver.execute_script("arguments[0].click();", radio)
+
                     has_reported = user_data.get("passportHistory").get("passportBookDetails").get("hasReportedLostOrStolen")
                     if has_reported:
                         radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_ReportLostBookYesRadioButton"]')))
@@ -653,15 +535,81 @@ def fill_form(user_data, webhook_url):
                             radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredUnknownRadioButton"]')))
                         driver.execute_script("arguments[0].click();", radio)
 
+                # Damaged
+                elif passport_book_status == "damaged":
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookDamaged"]')))
+                    driver.execute_script("arguments[0].click();", radio)
+
+                     # first name and middle name
+                    first_name_and_middle_name = user_data.get("passportHistory").get("passportBookDetails").get("firstNameAndMiddleName", False)
+                    if first_name_and_middle_name:
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_firstNameOnBook'))).send_keys(first_name_and_middle_name)
+                    
+                    # issue date
+                    date_issue_damaged = user_data.get("passportHistory").get("passportBookDetails").get("issueDate", False)
+                    if date_issue_damaged:
+                        issue_date_str = user_data.get("passportHistory").get("passportBookDetails").get("issueDate").get("$date")
+                        issue_date = datetime.strptime(issue_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                        formatted_issue_date = issue_date.strftime("%m-%d-%Y")
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_BookIssueDate'))).send_keys(formatted_issue_date)
+
+                    # last name
+                    last_name = user_data.get("passportHistory").get("passportBookDetails").get("lastName", False)
+                    if last_name:
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_lastNameOnBook'))).send_keys(last_name)
+
+                    # book number
+                    book_number = user_data.get("passportHistory").get("passportBookDetails").get("number", False)
+                    if book_number:
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingBookNumber'))).send_keys(book_number)
+                
+                # Yes
+                elif passport_book_status == "yes":
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookYes"]')))
+                    driver.execute_script("arguments[0].click();", radio)
+
+                    issue_date_str = user_data.get("passportHistory").get("passportBookDetails").get("issueDate").get("$date")
+                    issue_date = datetime.strptime(issue_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    formatted_issue_date = issue_date.strftime("%m-%d-%Y")
+                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_BookIssueDate'))).send_keys(formatted_issue_date)
+
+                    # first name and middle name
+                    first_name_and_middle_name = user_data.get("passportHistory").get("passportBookDetails").get("firstNameAndMiddleName", False)
+                    if first_name_and_middle_name:
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_firstNameOnBook'))).send_keys(first_name_and_middle_name)
+
+                    # last name
+                    last_name = user_data.get("passportHistory").get("passportBookDetails").get("lastName", False)
+                    if last_name:
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_lastNameOnBook'))).send_keys(last_name)
+
+                    # book number
+                    book_number = user_data.get("passportHistory").get("passportBookDetails").get("number")
+                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingBookNumber'))).send_keys(book_number)
+
+                    if is_within_8_years_6_days(issue_date_str):
+                        most_recent_passport_details(driver, user_data)
+
             else:
                 type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveNone"]')))
                 driver.execute_script("arguments[0].click();", type_radio)
-
-            is_older_than_15_years = user_data.get("passportHistory").get("passportBookDetails").get("isOlderThan15Years", False)
-            if is_older_than_15_years == 'no' or is_older_than_15_years == 'unknown' or issue_date_str:
-                print("indide")
-                lost_or_stolen(driver, user_data)
+            
+            # Check if passport is lost or stolen
+            if passport_book_status in ["lost", "stolen"]:
+                is_older_than_15_years = user_data.get("passportHistory").get("passportBookDetails").get("isOlderThan15Years", False)
+                
+                # If passport is not older than 15 years OR issue date exists AND has not been reported
+                if (is_older_than_15_years == 'no' or is_older_than_15_years == 'unknown' or date_issue) and not has_reported:
+                    print("indide")
+                    # Handle lost/stolen passport flow
+                    lost_or_stolen(driver, user_data)
+                else:
+                    # Continue to next page
+                    next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
+                    driver.execute_script("arguments[0].click();", next_button)
             else:
+                # Continue to next page if passport is not lost/stolen
+                print("continue to next page hai")
                 next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
                 driver.execute_script("arguments[0].click();", next_button)
 
@@ -671,170 +619,190 @@ def fill_form(user_data, webhook_url):
         
 # page 8
 
-        # parent and spouse information
-        try:
-            # parent 1
-            is_parent1_unknown = user_data['parentAndMarriageInfo']['isParent1Unknown']
-            if not is_parent1_unknown:
-                # first name and middle name
-                wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent1FirstNameTextBox'))).send_keys(user_data['parentAndMarriageInfo']['parent1']["firstName"])
-                # last name
-                wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent1LastNameTextBox'))).send_keys(user_data['parentAndMarriageInfo']['parent1']["lastName"])
-                # dob
-                print(f"hai {user_data['parentAndMarriageInfo']['parent1']}")
-                is_parent1_dob = user_data['parentAndMarriageInfo']['parent1'].get("dateOfBirth")
-                if is_parent1_dob is not None and is_parent1_dob is not False:
-                    parent1_dob_str = user_data['parentAndMarriageInfo']['parent1']["dateOfBirth"]["$date"]
-                    parent1_dob = datetime.strptime(parent1_dob_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-                    formatted_dob1 = parent1_dob.strftime("%m-%d-%Y")
-                    print(formatted_dob1)
+        # Check if passport is valid and issued within 8 years 6 days only passport status is yes
+        passport_book_status = user_data.get("passportHistory").get("passportBookDetails").get("status")
+        # issue_date_str = user_data.get("passportHistory").get("passportBookDetails").get("issueDate",False).get("$date")
+        issue_date = user_data.get("passportHistory", {}).get("passportBookDetails", {}).get("issueDate")
+        issue_date_str = issue_date.get("$date") if isinstance(issue_date, dict) else None
+        if not (passport_book_status == "yes" and is_within_8_years_6_days(issue_date_str)):
+            # parent and spouse information
+            print("inside parent and spouse information")
+            try:
+                # parent 1
+                is_parent1_unknown = user_data['parentAndMarriageInfo']['isParent1Unknown']
+                if not is_parent1_unknown:
+                    # first name and middle name
+                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent1FirstNameTextBox'))).send_keys(user_data['parentAndMarriageInfo']['parent1']["firstName"])
+                    # last name
+                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent1LastNameTextBox'))).send_keys(user_data['parentAndMarriageInfo']['parent1']["lastName"])
+                    # dob
+                    print(f"hai {user_data['parentAndMarriageInfo']['parent1']}")
+                    is_parent1_dob = user_data['parentAndMarriageInfo']['parent1'].get("dateOfBirth")
+                    if is_parent1_dob is not None and is_parent1_dob is not False:
+                        parent1_dob_str = user_data['parentAndMarriageInfo']['parent1']["dateOfBirth"]["$date"]
+                        parent1_dob = datetime.strptime(parent1_dob_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                        formatted_dob1 = parent1_dob.strftime("%m-%d-%Y")
+                        print(formatted_dob1)
 
-                    parent1_dob_input = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent1BirthDateTextBox')))
-                    parent1_dob_input.click()  # Focus the field
-                    parent1_dob_input.clear()   # Clear any existing value
-                    parent1_dob_input.send_keys(formatted_dob1)  # Send formatted DOB
-                    time.sleep(0.5) 
+                        parent1_dob_input = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent1BirthDateTextBox')))
+                        parent1_dob_input.click()  # Focus the field
+                        parent1_dob_input.clear()   # Clear any existing value
+                        parent1_dob_input.send_keys(formatted_dob1)  # Send formatted DOB
+                        time.sleep(0.5) 
 
-                # place of birth
-                is_parent1_pob = user_data['parentAndMarriageInfo']['parent1'].get("placeOfBirth")
-                if is_parent1_pob is not None and is_parent1_pob is not False:
-                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent1BirthPlaceTextBox'))).send_keys(user_data['parentAndMarriageInfo']['parent1']["placeOfBirth"])
-                # gender
+                    # place of birth
+                    is_parent1_pob = user_data['parentAndMarriageInfo']['parent1'].get("placeOfBirth")
+                    if is_parent1_pob is not None and is_parent1_pob is not False:
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent1BirthPlaceTextBox'))).send_keys(user_data['parentAndMarriageInfo']['parent1']["placeOfBirth"])
+                    # gender
 
-                gender = user_data["parentAndMarriageInfo"]['parent1'].get("gender").strip().lower()
+                    gender = user_data["parentAndMarriageInfo"]['parent1'].get("gender").strip().lower()
 
-                if gender == "male":
-                    gender_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent1SexList_0"]')))  # Male radio button
-                    driver.execute_script("arguments[0].click();", gender_radio)
-                elif gender == "female":
-                    gender_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent1SexList_1"]')))  # Female radio button
-                    driver.execute_script("arguments[0].click();", gender_radio)
+                    if gender == "male":
+                        gender_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent1SexList_0"]')))  # Male radio button
+                        driver.execute_script("arguments[0].click();", gender_radio)
+                    elif gender == "female":
+                        gender_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent1SexList_1"]')))  # Female radio button
+                        driver.execute_script("arguments[0].click();", gender_radio)
+                    else:
+                        gender_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent1SexList_2"]')))  # Other/Unspecified
+                        driver.execute_script("arguments[0].click();", gender_radio)
+                        
+                    # citizenship
+                    citizenship = user_data["parentAndMarriageInfo"]['parent1'].get("isUSCitizen")
+                    if citizenship:
+                        citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent1CitizenList_0"]')))  # Other/Unspecified
+                        driver.execute_script("arguments[0].click();", citizenship_radio)
+                    else:
+                        citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent1CitizenList_1"]')))  # Other/Unspecified
+                        driver.execute_script("arguments[0].click();", citizenship_radio)
                 else:
-                    gender_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent1SexList_2"]')))  # Other/Unspecified
-                    driver.execute_script("arguments[0].click();", gender_radio)
-                    
-                # citizenship
-                citizenship = user_data["parentAndMarriageInfo"]['parent1'].get("isUSCitizen")
-                if citizenship:
-                    citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent1CitizenList_0"]')))  # Other/Unspecified
-                    driver.execute_script("arguments[0].click();", citizenship_radio)
-                else:
-                    citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent1CitizenList_1"]')))  # Other/Unspecified
-                    driver.execute_script("arguments[0].click();", citizenship_radio)
+                    is_parent1_unknown_checkbox = wait.until(EC.element_to_be_clickable((By.ID, 'PassportWizard_moreAboutYouStep_unknownParent1CheckBox')))
+                    is_parent1_unknown_checkbox.click() 
                 
-            # parent 2
-            is_parent2_unknown = user_data['parentAndMarriageInfo']['isParent2Unknown']
-            if not is_parent2_unknown:
-                # first name and middle name
-                wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent2FirstNameTextBox'))).send_keys(user_data['parentAndMarriageInfo']['parent2']["firstName"])
-                # last name
-                wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent2LastNameTextBox'))).send_keys(user_data['parentAndMarriageInfo']['parent2']["lastName"])
-                # dob
-                print(user_data['parentAndMarriageInfo']['parent2'])
-                is_parent2_dob = user_data['parentAndMarriageInfo']['parent2'].get("dateOfBirth")
-                if is_parent2_dob is not None and is_parent2_dob is not False:
-                    parent2_dob_str = user_data['parentAndMarriageInfo']['parent2']["dateOfBirth"]["$date"]
-                    parent2_dob = datetime.strptime(parent2_dob_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-                    formatted_dob2 = parent2_dob.strftime("%m-%d-%Y")
-                    
-                    print(formatted_dob2)
-                    
-                    parent2_dob_input = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent2BirthDateTextBox')))
-                    parent2_dob_input.click()  # Focus the field
-                    parent2_dob_input.clear()   # Clear any existing value
-                    parent2_dob_input.send_keys(formatted_dob2)  # Send formatted DOB
+                    # Wait for any loading overlays to disappear
+                    WebDriverWait(driver, 10).until(
+                        EC.invisibility_of_element_located((By.CLASS_NAME, 'TransparentDiv'))
+                    )
                     time.sleep(0.5)
-                # place of birth
-                is_parent2_pob = user_data['parentAndMarriageInfo']['parent2'].get("placeOfBirth")
-                if is_parent2_pob is not None and is_parent2_pob is not False:
-                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent2BirthPlaceTextBox'))).send_keys(user_data['parentAndMarriageInfo']['parent2']["placeOfBirth"])
-                # gender
 
-                gender = user_data["parentAndMarriageInfo"]['parent2'].get("gender").strip().lower()
 
-                if gender == "male":
-                    gender_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent2SexList_0"]')))  # Male radio button
-                    driver.execute_script("arguments[0].click();", gender_radio)
-                elif gender == "female":
-                    gender_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent2SexList_1"]')))  # Female radio button
-                    driver.execute_script("arguments[0].click();", gender_radio)
+                # parent 2
+                is_parent2_unknown = user_data['parentAndMarriageInfo']['isParent2Unknown']
+                if not is_parent2_unknown:
+                    # first name and middle name
+                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent2FirstNameTextBox'))).send_keys(user_data['parentAndMarriageInfo']['parent2']["firstName"])
+                    # last name
+                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent2LastNameTextBox'))).send_keys(user_data['parentAndMarriageInfo']['parent2']["lastName"])
+                    # dob
+                    print(user_data['parentAndMarriageInfo']['parent2'])
+                    is_parent2_dob = user_data['parentAndMarriageInfo']['parent2'].get("dateOfBirth")
+                    if is_parent2_dob is not None and is_parent2_dob is not False:
+                        parent2_dob_str = user_data['parentAndMarriageInfo']['parent2']["dateOfBirth"]["$date"]
+                        parent2_dob = datetime.strptime(parent2_dob_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                        formatted_dob2 = parent2_dob.strftime("%m-%d-%Y")
+                        
+                        print(formatted_dob2)
+                        
+                        parent2_dob_input = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent2BirthDateTextBox')))
+                        parent2_dob_input.click()  # Focus the field
+                        parent2_dob_input.clear()   # Clear any existing value
+                        parent2_dob_input.send_keys(formatted_dob2)  # Send formatted DOB
+                        time.sleep(0.5)
+                    # place of birth
+                    is_parent2_pob = user_data['parentAndMarriageInfo']['parent2'].get("placeOfBirth")
+                    if is_parent2_pob is not None and is_parent2_pob is not False:
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_parent2BirthPlaceTextBox'))).send_keys(user_data['parentAndMarriageInfo']['parent2']["placeOfBirth"])
+                    # gender
+
+                    gender = user_data["parentAndMarriageInfo"]['parent2'].get("gender").strip().lower()
+
+                    if gender == "male":
+                        gender_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent2SexList_0"]')))  # Male radio button
+                        driver.execute_script("arguments[0].click();", gender_radio)
+                    elif gender == "female":
+                        gender_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent2SexList_1"]')))  # Female radio button
+                        driver.execute_script("arguments[0].click();", gender_radio)
+                    else:
+                        gender_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent2SexList_2"]')))  # Other/Unspecified
+                        driver.execute_script("arguments[0].click();", gender_radio)
+                        
+                    # citizenship
+                    citizenship = user_data["parentAndMarriageInfo"]['parent2'].get("isUSCitizen")
+                    if citizenship:
+                        citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent2CitizenList_0"]')))  # Other/Unspecified
+                        driver.execute_script("arguments[0].click();", citizenship_radio)
+                    else:
+                        citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent2CitizenList_1"]')))  # Other/Unspecified
+                        driver.execute_script("arguments[0].click();", citizenship_radio)
                 else:
-                    gender_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent2SexList_2"]')))  # Other/Unspecified
-                    driver.execute_script("arguments[0].click();", gender_radio)
-                    
-                # citizenship
-                citizenship = user_data["parentAndMarriageInfo"]['parent2'].get("isUSCitizen")
-                if citizenship:
-                    citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent2CitizenList_0"]')))  # Other/Unspecified
-                    driver.execute_script("arguments[0].click();", citizenship_radio)
-                else:
-                    citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_parent2CitizenList_1"]')))  # Other/Unspecified
-                    driver.execute_script("arguments[0].click();", citizenship_radio)
+                    is_parent2_unknown_checkbox = wait.until(EC.element_to_be_clickable((By.ID, 'PassportWizard_moreAboutYouStep_unknownParent2CheckBox')))
+                    is_parent2_unknown_checkbox.click() 
+
+            except Exception as e:
+                send_failure_response(webhook_url, "Failed to fill parent information. Please try again.", str(e)) 
+                driver.quit()
         
-        except Exception as e:
-            send_failure_response(webhook_url, "Failed to fill parent information. Please try again.", str(e)) 
-            driver.quit()
-        
-        try:    
-            # marriage info
-            marriage_info = user_data["parentAndMarriageInfo"].get("isMarried")
-            if marriage_info:
-                radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_marriedList_0"]')))  # Other/Unspecified
-                driver.execute_script("arguments[0].click();", radio)
-                
-                wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseNameTextBox'))).send_keys(user_data['parentAndMarriageInfo']['marriageDetails']["spouseFirstName"])
-                wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseLastNameTextBox'))).send_keys(user_data['parentAndMarriageInfo']['marriageDetails']["spouseLastName"])
-                # dob
-                spouse_dob_str = user_data['parentAndMarriageInfo']['marriageDetails']["spouseDateOfBirth"]["$date"]
-                spouse_dob = datetime.strptime(spouse_dob_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-                formatted_dob = spouse_dob.strftime("%m-%d-%Y")
-                wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseBirthDateTextBox'))).send_keys(formatted_dob)
-                # place of birth
-                wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseBirthplaceTextBox'))).send_keys(user_data['parentAndMarriageInfo']['marriageDetails']["spousePlaceOfBirth"])
-                # citizenship
-                citizenship = user_data['parentAndMarriageInfo']['marriageDetails'].get("spouseIsUSCitizen")
-                if citizenship:
-                    citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_spouseCitizenList_0"]')))  # Other/Unspecified
-                    driver.execute_script("arguments[0].click();", citizenship_radio)
-                else:
-                    citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_spouseCitizenList_1"]')))  # Other/Unspecified
-                    driver.execute_script("arguments[0].click();", citizenship_radio)
-                    
-                # date of marriage
-                date_of_marriage_str = user_data['parentAndMarriageInfo']['marriageDetails']["marriageDate"]["$date"]
-                date_of_marriage = datetime.strptime(date_of_marriage_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-                formatted_dom = date_of_marriage.strftime("%m-%d-%Y")
-                wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_marriedDateTextBox'))).send_keys(formatted_dom)
-                
-                # widow or divorce
-                widow_or_divorce = user_data['parentAndMarriageInfo']['marriageDetails'].get("isWidowedOrDivorced")
-                if widow_or_divorce:
-                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_divorcedList_0"]'))) 
+            try:    
+                # marriage info
+                marriage_info = user_data["parentAndMarriageInfo"].get("isMarried")
+                if marriage_info:
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_marriedList_0"]')))  # Other/Unspecified
                     driver.execute_script("arguments[0].click();", radio)
-                    # divorced date
-                    marriage_or_divorce_date_str = user_data['parentAndMarriageInfo']['marriageDetails']["widowOrDivorceDate"]
-                    marriage_or_divorce_date = datetime.strptime(marriage_or_divorce_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-                    formatted_dod = marriage_or_divorce_date.strftime("%m-%d-%Y")
-                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_divorcedDateTextBox'))).send_keys(formatted_dod)
-            
                     
-                else:
-                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_divorcedList_1"]')))  
-                    driver.execute_script("arguments[0].click();", radio)
-            
-            else:
-                radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_marriedList_1"]')))  # Other/Unspecified
-                driver.execute_script("arguments[0].click();", radio)
+                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseNameTextBox'))).send_keys(user_data['parentAndMarriageInfo']['marriageDetails']["spouseFirstName"])
+                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseLastNameTextBox'))).send_keys(user_data['parentAndMarriageInfo']['marriageDetails']["spouseLastName"])
+                    # dob
+                    spouse_dob_str = user_data['parentAndMarriageInfo']['marriageDetails']["spouseDateOfBirth"]["$date"]
+                    spouse_dob = datetime.strptime(spouse_dob_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    formatted_dob = spouse_dob.strftime("%m-%d-%Y")
+                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseBirthDateTextBox'))).send_keys(formatted_dob)
+                    # place of birth
+                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_spouseBirthplaceTextBox'))).send_keys(user_data['parentAndMarriageInfo']['marriageDetails']["spousePlaceOfBirth"])
+                    # citizenship
+                    citizenship = user_data['parentAndMarriageInfo']['marriageDetails'].get("spouseIsUSCitizen")
+                    if citizenship:
+                        citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_spouseCitizenList_0"]')))  # Other/Unspecified
+                        driver.execute_script("arguments[0].click();", citizenship_radio)
+                    else:
+                        citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_spouseCitizenList_1"]')))  # Other/Unspecified
+                        driver.execute_script("arguments[0].click();", citizenship_radio)
+                        
+                    # date of marriage
+                    date_of_marriage_str = user_data['parentAndMarriageInfo']['marriageDetails']["marriageDate"]["$date"]
+                    date_of_marriage = datetime.strptime(date_of_marriage_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    formatted_dom = date_of_marriage.strftime("%m-%d-%Y")
+                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_marriedDateTextBox'))).send_keys(formatted_dom)
+                    
+                    # widow or divorce
+                    widow_or_divorce = user_data['parentAndMarriageInfo']['marriageDetails'].get("isWidowedOrDivorced")
+                    if widow_or_divorce:
+                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_divorcedList_0"]'))) 
+                        driver.execute_script("arguments[0].click();", radio)
+                        # divorced date
+                        marriage_or_divorce_date_str = user_data['parentAndMarriageInfo']['marriageDetails']["widowOrDivorceDate"]
+                        marriage_or_divorce_date = datetime.strptime(marriage_or_divorce_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                        formatted_dod = marriage_or_divorce_date.strftime("%m-%d-%Y")
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_divorcedDateTextBox'))).send_keys(formatted_dod)
                 
-            next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
-            driver.execute_script("arguments[0].click();", next_button)
-        
-        except Exception as e:
-            send_failure_response(webhook_url, "Failed to fill marriage info. Please try again.", str(e)) 
-            driver.quit()
+                        
+                    else:
+                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_divorcedList_1"]')))  
+                        driver.execute_script("arguments[0].click();", radio)
+                
+                else:
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_marriedList_1"]')))  # Other/Unspecified
+                    driver.execute_script("arguments[0].click();", radio)
+                    
+                next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
+                driver.execute_script("arguments[0].click();", next_button)
+            
+            except Exception as e:
+                send_failure_response(webhook_url, "Failed to fill marriage info. Please try again.", str(e)) 
+                driver.quit()
 
-        
-        print("waiting for page 9")
+            
+            print("waiting for page 9")
         
 # page 9
         # other names
