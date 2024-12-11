@@ -49,18 +49,20 @@ def lost_or_stolen(driver, user_data):
 
         passport_history_details = user_data.get("passportHistory", {})
         passport_history = passport_history_details.get('hasPassportCardOrBook', False)
-        passport_book_details = passport_history_details.get("passportBookDetails", False)
-        passport_card_details = passport_history_details.get("passportCardDetails", False)
-        passport_card_status = passport_card_details.get("status")
-        passport_book_status = passport_book_details.get("status")
-        has_book_reported_lost_or_stolen = passport_book_details.get("hasReportedLostOrStolen")
-        has_card_reported_lost_or_stolen = passport_card_details.get("hasReportedLostOrStolen")
+        passport_book_details = passport_history_details.get("passportBookDetails")
+        passport_card_details = passport_history_details.get("passportCardDetails")
+        
+        passport_card_status = passport_card_details.get("status") if passport_card_details else None
+        passport_book_status = passport_book_details.get("status") if passport_book_details else None
+        has_book_reported_lost_or_stolen = passport_book_details.get("hasReportedLostOrStolen") if passport_book_details else None
+        has_card_reported_lost_or_stolen = passport_card_details.get("hasReportedLostOrStolen") if passport_card_details else None
 
         book_details = user_data.get('lostInfo').get('bookLostDetails')
-        card_details = user_data.get('lostInfo').get('cardLostDetails')
         book_location = user_data.get('lostInfo').get('bookLostLocation')
-        card_location = user_data.get('lostInfo').get('cardLostLocation')
         book_lost_date_details = user_data.get('lostInfo').get('bookLostDate')
+
+        card_details = user_data.get('lostInfo').get('cardLostDetails')
+        card_location = user_data.get('lostInfo').get('cardLostLocation')
         card_lost_date_details = user_data.get('lostInfo').get('cardLostDate')
 
         if (passport_card_status in ["lost", "stolen"] and not has_card_reported_lost_or_stolen) and (passport_book_status in ["lost", "stolen"] and not has_book_reported_lost_or_stolen):
@@ -70,8 +72,15 @@ def lost_or_stolen(driver, user_data):
                 driver.execute_script("arguments[0].click();", radio)
 
                 #book lost details 
+                book_details = user_data.get('lostInfo').get('bookLostDetails')
                 wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_lostStolenStep_bookLostHowTextBox'))).send_keys(book_details)
+
+                #book lost location
+                book_location = user_data.get('lostInfo').get('bookLostLocation')
                 wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_lostStolenStep_bookLostWhereTextBox'))).send_keys(book_location)
+
+                #book lost date
+                book_lost_date_details = user_data.get('lostInfo').get('bookLostDate')
                 book_lost_date_str = book_lost_date_details.get('$date')
                 book_lost_date = datetime.strptime(book_lost_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
                 formatted_book_data = book_lost_date.strftime("%m-%d-%Y")
@@ -81,23 +90,40 @@ def lost_or_stolen(driver, user_data):
                 driver.execute_script("arguments[0].click();", radio)
 
                 #book lost details
+                book_details = user_data.get('lostInfo').get('bookLostDetails')
                 wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_lostStolenStep_bookLostHowTextBox'))).send_keys(book_details)
+
+                #book lost location
+                book_location = user_data.get('lostInfo').get('bookLostLocation')
                 wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_lostStolenStep_bookLostWhereTextBox'))).send_keys(book_location)
+
+                #book lost date
+                book_lost_date_details = user_data.get('lostInfo').get('bookLostDate')
                 book_lost_date_str = book_lost_date_details.get('$date')
                 book_lost_date = datetime.strptime(book_lost_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
                 formatted_book_data = book_lost_date.strftime("%m-%d-%Y")
                 wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_lostStolenStep_bookLostDateTextBox'))).send_keys(formatted_book_data)
 
                 #card lost details
+                card_details = user_data.get('lostInfo').get('cardLostDetails')
                 wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_lostStolenStep_cardLostHowTextBox'))).send_keys(card_details)
+                
+                #card lost location
+                card_location = user_data.get('lostInfo').get('cardLostLocation')
                 wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_lostStolenStep_cardLostWhereTextBox'))).send_keys(card_location)
+
+                #card lost date
+                card_lost_date_details = user_data.get('lostInfo').get('cardLostDate')
                 card_lost_date_str = card_lost_date_details.get('$date')
                 card_lost_date = datetime.strptime(card_lost_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
                 formatted_card_data = card_lost_date.strftime("%m-%d-%Y")
                 wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_lostStolenStep_cardLostDateTextBox'))).send_keys(formatted_card_data)
 
         else:
+
             #lost details
+            book_details = user_data.get('lostInfo').get('bookLostDetails')
+            card_details = user_data.get('lostInfo').get('cardLostDetails')
             if book_details:
                 wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_lostStolenStep_bookLostHowTextBox'))).send_keys(book_details)
             elif card_details:
@@ -105,6 +131,8 @@ def lost_or_stolen(driver, user_data):
             
 
             #lost location details
+            book_location = user_data.get('lostInfo').get('bookLostLocation')
+            card_location = user_data.get('lostInfo').get('cardLostLocation')
             if book_location:
                 wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_lostStolenStep_bookLostWhereTextBox'))).send_keys(book_location)
             elif card_location:
@@ -112,6 +140,8 @@ def lost_or_stolen(driver, user_data):
 
             
             #lost date
+            book_lost_date_details = user_data.get('lostInfo').get('bookLostDate')
+            card_lost_date_details = user_data.get('lostInfo').get('cardLostDate')
             if book_lost_date_details:
                 book_lost_date_str = book_lost_date_details.get('$date')
                 book_lost_date = datetime.strptime(book_lost_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")

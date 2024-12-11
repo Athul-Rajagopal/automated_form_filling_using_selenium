@@ -51,9 +51,15 @@ def passport_route_flow_helper(driver, user_data):
             has_book_reported_lost_or_stolen = passport_book_details.get("hasReportedLostOrStolen")
             has_card_reported_lost_or_stolen = passport_card_details.get("hasReportedLostOrStolen")
 
-            if passport_card_status in ["lost", "stolen"] and not has_card_reported_lost_or_stolen:
+            if (passport_card_status in ["lost", "stolen"] and not has_card_reported_lost_or_stolen) and (passport_book_status in ["lost", "stolen"] and not has_book_reported_lost_or_stolen):
                 lost_or_stolen(driver, user_data)
-            elif passport_book_status in ["lost", "stolen"] and not has_book_reported_lost_or_stolen:
+            elif (passport_card_status in ["lost", "stolen"] and not has_card_reported_lost_or_stolen) and (passport_book_status == "damaged"):
+                lost_or_stolen(driver, user_data)
+            elif (passport_book_status in ["lost", "stolen"] and not has_book_reported_lost_or_stolen) and (passport_card_status == "damaged"):
+                lost_or_stolen(driver, user_data)
+            elif (passport_card_status in ["lost", "stolen"] and has_card_reported_lost_or_stolen) and (passport_book_status in ["lost", "stolen"] and not has_book_reported_lost_or_stolen):
+                lost_or_stolen(driver, user_data)
+            elif (passport_book_status in ["lost", "stolen"] and has_book_reported_lost_or_stolen) and (passport_card_status in ["lost", "stolen"] and not has_card_reported_lost_or_stolen):
                 lost_or_stolen(driver, user_data)
             else:
                 print('else case')

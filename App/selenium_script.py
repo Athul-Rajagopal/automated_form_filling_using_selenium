@@ -1147,6 +1147,29 @@ def fill_form(user_data, webhook_url):
         
         print("waiting for page 12")
 
+        # Electronic Signature
+        passport_history_details = user_data.get("passportHistory", {})
+        passport_book_details = passport_history_details.get("passportBookDetails", False)
+        passport_card_details = passport_history_details.get("passportCardDetails", False)
+        
+        if ((passport_book_details and passport_book_details.get("status") in ["lost", "stolen"] and not passport_book_details.get("hasReportedLostOrStolen")) or 
+            (passport_card_details and passport_card_details.get("status") in ["lost", "stolen"] and not passport_card_details.get("hasReportedLostOrStolen"))):
+            
+            lost_info = user_data.get('lostInfo',{})
+            is_own_passport = lost_info.get('isOwnPassport',False)
+            if is_own_passport:
+                try:
+                    print("electronic signature")
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_esignatureStep_lostOrStolenDelivery_1"]'))) 
+                    driver.execute_script("arguments[0].click();", radio)
+                    next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
+                    driver.execute_script("arguments[0].click();", next_button)
+                except Exception as e:
+                    print(f"Error filling electronic signature: {e}")
+                    send_failure_response(webhook_url, "Failed to fill electronic signature. Please try again.", str(e)) 
+                    driver.quit()
+
+
 # page 12
 
         # printing pdf
