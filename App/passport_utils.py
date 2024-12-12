@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from lost_or_stolen import lost_or_stolen
-
+from most_recent_passport_details import most_recent_passport_details
 def passport_route_flow_helper(driver, user_data):
     try:
         print("inside passport_route_flow_helper")
@@ -17,6 +17,7 @@ def passport_route_flow_helper(driver, user_data):
         # if passport_book_details and passport_history != "both":
         if passport_history == "book":
             passport_book_status = passport_book_details.get("status")
+            print(passport_book_status)
             if passport_book_status in ["lost", "stolen"]:
                 is_older_than_15_years = user_data.get("passportHistory").get("passportBookDetails").get("isOlderThan15Years", False)
                 
@@ -61,6 +62,13 @@ def passport_route_flow_helper(driver, user_data):
                 lost_or_stolen(driver, user_data)
             elif (passport_book_status in ["lost", "stolen"] and has_book_reported_lost_or_stolen) and (passport_card_status in ["lost", "stolen"] and not has_card_reported_lost_or_stolen):
                 lost_or_stolen(driver, user_data)
+            elif passport_card_status == "yes" and passport_book_status == "yes":
+                most_recent_passport_details(driver, user_data)
+            elif (passport_card_status == "yes" and passport_book_status == "damaged") or (passport_book_status == "yes" and passport_card_status == "damaged"):
+                most_recent_passport_details(driver, user_data)
+            elif (passport_card_status == "yes" and passport_book_status in ["lost", "stolen"]) or (passport_book_status == "yes" and passport_card_status in ["lost", "stolen"]):
+                most_recent_passport_details(driver, user_data)
+                lost_or_stolen(driver, user_data)
             else:
                 print('else case')
                 next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
@@ -73,4 +81,4 @@ def passport_route_flow_helper(driver, user_data):
 
     except Exception as e:
         print(f"Error in passport_route_flow_helper: {e}")
-        # raise e
+        raise e

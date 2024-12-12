@@ -14,7 +14,7 @@ from download_helper import wait_for_downloads
 from utils import send_failure_response
 from lost_or_stolen import lost_or_stolen
 from most_recent_passport_details import most_recent_passport_details
-from date_calculation_helper import is_within_8_years_6_days
+from date_calculation_helper import is_within_8_years_6_days, is_name_change_needed
 from passport_both_helper import passport_both_helper
 from passport_utils import passport_route_flow_helper
 
@@ -588,7 +588,10 @@ def fill_form(user_data, webhook_url):
                     book_number = user_data.get("passportHistory").get("passportBookDetails").get("number")
                     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingBookNumber'))).send_keys(book_number)
 
-                    if is_within_8_years_6_days(issue_date_str):
+                    date_of_birth_str = user_data.get('personalInfo').get('dateOfBirth').get('$date')
+                    print(f"name change needed out {is_name_change_needed(date_of_birth_str, issue_date_str)}")
+                    if is_name_change_needed(date_of_birth_str, issue_date_str):
+                        print("name change needed in")
                         most_recent_passport_details(driver, user_data)
 
             elif passport_history == "card":
@@ -663,6 +666,34 @@ def fill_form(user_data, webhook_url):
                     card_number = user_data.get("passportHistory").get("passportCardDetails").get("number", False)
                     if card_number:
                         wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingCardNumber'))).send_keys(card_number)
+                elif passport_card_status == "yes":
+                    print("card status is yes")
+                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardYes"]')))
+                    driver.execute_script("arguments[0].click();", radio)
+
+                    issue_date_str = user_data.get("passportHistory").get("passportCardDetails").get("issueDate").get("$date")
+                    issue_date = datetime.strptime(issue_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    formatted_issue_date = issue_date.strftime("%m-%d-%Y")
+                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_CardIssueDate'))).send_keys(formatted_issue_date)
+
+                    # first name and middle name
+                    first_name_and_middle_name = user_data.get("passportHistory").get("passportCardDetails").get("firstNameAndMiddleName", False)
+                    if first_name_and_middle_name:
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_firstNameOnCard'))).send_keys(first_name_and_middle_name)
+
+                    # last name
+                    last_name = user_data.get("passportHistory").get("passportCardDetails").get("lastName", False)
+                    if last_name:
+                        wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_lastNameOnCard'))).send_keys(last_name)
+
+                    # book number
+                    card_number = user_data.get("passportHistory").get("passportCardDetails").get("number")
+                    wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingCardNumber'))).send_keys(card_number)
+                    #partially finished
+                    date_of_birth_str = user_data.get('personalInfo').get('dateOfBirth').get('$date')
+                    if is_name_change_needed(date_of_birth_str, issue_date_str):
+                        most_recent_passport_details(driver, user_data)
+                    
             elif passport_history == "both":
                 passport_both_helper(driver, user_data)
             else:
@@ -712,23 +743,60 @@ def fill_form(user_data, webhook_url):
             print("waiting for page 8")
         except Exception as e:
             print("error",str(e))
+            send_failure_response(webhook_url, "Failed to fill passport history. Please try again.", str(e)) 
+            driver.quit()
         
 # page 8
 
         # Check if passport is valid and issued within 8 years 6 days only passport status is yes
-        passport_card_details = user_data.get("passportHistory", {}).get("passportCardDetails", {})
-        passport_card_status = passport_card_details.get("status") if passport_card_details is not None else None
-        passport_book_details = user_data.get("passportHistory", {}).get("passportBookDetails",{})
-        passport_book_status = passport_book_details.get("status") if passport_book_details is not None else None
+        date_of_birth_str = user_data.get('personalInfo').get('dateOfBirth').get('$date')
+        passport_history = user_data.get("passportHistory", {})
+        book_details = passport_history.get("passportBookDetails") or {}
+        card_details = passport_history.get("passportCardDetails") or {}
+        passport_card_status = card_details.get("status") if card_details is not None else None
+        passport_book_status = book_details.get("status") if book_details is not None else None
 
-         # Try to get issue date from book details first, then card details if book details don't have it
-        issue_date = None
-        if passport_book_details:
-            issue_date = passport_book_details.get("issueDate")
-        if not issue_date and passport_card_details:
-            issue_date = passport_card_details.get("issueDate")
-        issue_date_str = issue_date.get("$date") if issue_date and isinstance(issue_date, dict) else None
-        if not (passport_book_status == "yes" and is_within_8_years_6_days(issue_date_str)) or not (passport_card_status == "yes" and is_within_8_years_6_days(issue_date_str)):
+        # Try to get issue date from book details first, then card details if book details don't have it
+        # issue_date = None
+        # if passport_book_details:
+        #     issue_date = passport_book_details.get("issueDate")
+        # if not issue_date and passport_card_details:
+        #     issue_date = passport_card_details.get("issueDate")
+        # issue_date_str = issue_date.get("$date") if issue_date and isinstance(issue_date, dict) else None
+
+        # Handle missing issueDate field
+        book_issue_date = book_details.get("issueDate") or {}
+        card_issue_date = card_details.get("issueDate") or {}
+        
+        book_issue_date_str = book_issue_date.get("$date") if book_issue_date else None
+        card_issue_date_str = card_issue_date.get("$date") if card_issue_date else None
+
+        is_book_name_change_needed = is_name_change_needed(date_of_birth_str, book_issue_date_str) if book_issue_date_str else False
+        is_card_name_change_needed = is_name_change_needed(date_of_birth_str, card_issue_date_str) if card_issue_date_str else False
+        print('KK')
+        print(f'is_book_name_change_needed: {is_name_change_needed(date_of_birth_str, book_issue_date_str)}')
+        print(f'is_card_name_change_needed: {is_card_name_change_needed}')
+        print(f'book {(passport_book_status != "yes" if passport_book_status else False) or ( (not is_book_name_change_needed) if book_issue_date_str else False)}')
+        print(f'card {(passport_card_status != "yes" if passport_card_status else False) or ( (not is_card_name_change_needed) if card_issue_date_str else False)}')
+        print(f'both {passport_history == "both" and (passport_book_status in ["lost", "stolen"] or passport_card_status in ["lost", "stolen"])}')
+        print('d')
+        print(
+            ((passport_book_status != "yes" if passport_book_status else False) or 
+             ((not is_book_name_change_needed) if book_issue_date_str else False)) or 
+            ((passport_card_status != "yes" if passport_card_status else False) or 
+             ((not is_card_name_change_needed) if card_issue_date_str else False)) or
+            (passport_history == "both" and 
+             (passport_book_status in ["lost", "stolen"] or 
+              passport_card_status in ["lost", "stolen"])))
+
+        if (
+            ((passport_book_status != "yes" if passport_book_status else False) or 
+             ((not is_book_name_change_needed) if book_issue_date_str else False)) or 
+            ((passport_card_status != "yes" if passport_card_status else False) or 
+             ((not is_card_name_change_needed) if card_issue_date_str else False)) or
+            (passport_history == "both" and 
+             (passport_book_status in ["lost", "stolen"] or 
+              passport_card_status in ["lost", "stolen"]))):
             # parent and spouse information
             print("inside parent and spouse information")
             try:
@@ -1109,34 +1177,52 @@ def fill_form(user_data, webhook_url):
                 driver.execute_script("arguments[0].click();", radio)
 
             # Additional Fees
+            passport_history = user_data.get("passportHistory", {})
+            book_details = passport_history.get("passportBookDetails") or {}
+            card_details = passport_history.get("passportCardDetails") or {}
+            passport_card_status = card_details.get("status") if card_details is not None else None
+            passport_book_status = book_details.get("status") if book_details is not None else None
             additional_fees = user_data.get('productInfo', False).get('additionalFees', False).get('fileSearch', False)
-            if additional_fees:
+            if additional_fees and (passport_card_status != "yes" if passport_card_status else False or passport_book_status != "yes" if passport_book_status else False):
                 # checkbox = wait.until(EC.element_to_be_clickable((By.NAME, 'PassportWizard$feesStep$addOptFileSearchCheckBox')))
                 # checkbox.click()
-
+                print("additional fees")
                  # Wait for any overlay to disappear first
                 WebDriverWait(driver, 10).until(
                     EC.invisibility_of_element_located((By.CLASS_NAME, 'TransparentDiv'))
                 )
+
+                print("additional fees 2")
                 
                 # Wait for the checkbox to be present and visible
                 checkbox = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.NAME, 'PassportWizard$feesStep$addOptFileSearchCheckBox'))
                 )
+
+                # checkbox = wait.until(EC.element_to_be_clickable((By.NAME, 'PassportWizard$feesStep$addOptFileSearchCheckBox')))
+                # checkbox.click()
+
+                print("additional fees 3")
                 
                 # Scroll the checkbox into view
                 driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", checkbox)
+                # print("additional fees 4")
                 time.sleep(1)  # Allow time for scrolling
+                print("additional fees 5")
                 driver.execute_script("arguments[0].click();", checkbox)
+                print("additional fees 6")
 
+            print("buttond")
             button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_FinishNavigationTemplateContainerID_FinishButton')))
             driver.execute_script("arguments[0].scrollIntoView();", button)
             time.sleep(1) 
             driver.execute_script("arguments[0].click();", button)
 
+            print("ddddaee")
             # Check for alert
             passport_history = user_data.get("passportHistory", False).get('hasPassportCardOrBook', False)
             if passport_history != 'both' and passport_option != 'both' and passport_history != passport_option:
+                print("alert")
                 alert = WebDriverWait(driver, 10).until(EC.alert_is_present())
                 alert.accept()
 
@@ -1154,7 +1240,7 @@ def fill_form(user_data, webhook_url):
         
         if ((passport_book_details and passport_book_details.get("status") in ["lost", "stolen"] and not passport_book_details.get("hasReportedLostOrStolen")) or 
             (passport_card_details and passport_card_details.get("status") in ["lost", "stolen"] and not passport_card_details.get("hasReportedLostOrStolen"))):
-            
+            print("electronic signature")
             lost_info = user_data.get('lostInfo',{})
             is_own_passport = lost_info.get('isOwnPassport',False)
             if is_own_passport:

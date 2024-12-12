@@ -147,5 +147,5 @@ def passport_both_helper(driver, user_data):
 
     except Exception as e:
         print(f"Error in passport_both_helper: {e}")
-        # raise e
+        raise e
     

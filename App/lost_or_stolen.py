@@ -193,7 +193,8 @@ def lost_or_stolen(driver, user_data):
         driver.execute_script("arguments[0].click();", next_button)
     
     except Exception as e:
-        print("An error occurred:", str(e))
+        print("An error occurred in lost_or_stolen:", str(e))
+        raise e
 
 
 
