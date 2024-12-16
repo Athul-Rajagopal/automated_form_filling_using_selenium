@@ -16,6 +16,7 @@ def passport_route_flow_helper(driver, user_data):
 
         # if passport_book_details and passport_history != "both":
         if passport_history == "book":
+            print("inside book route")
             passport_book_status = passport_book_details.get("status")
             print(passport_book_status)
             if passport_book_status in ["lost", "stolen"]:

@@ -100,20 +100,22 @@ def passport_both_helper(driver, user_data):
                 wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_BookIssueDate'))).send_keys(formatted_book_issue_date)
             else:
                 print('book issue date not found')
-                next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
-                driver.execute_script("arguments[0].click();", next_button)
-                alert = WebDriverWait(driver, 10).until(EC.alert_is_present())
-                alert.accept()
+                stolen_reported = user_data['passportHistory'].get('passportBookDetails').get('hasReportedLostOrStolen', False)
+                if not stolen_reported:
+                    next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
+                    driver.execute_script("arguments[0].click();", next_button)
+                    alert = WebDriverWait(driver, 10).until(EC.alert_is_present())
+                    alert.accept()
 
-                is_older_than_15_years = user_data.get("passportHistory").get("passportBookDetails").get("isOlderThan15Years")
-                print(f"is_older_than_15_years: {is_older_than_15_years}")
-                if is_older_than_15_years == 'yes':
-                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredYesRadioButton"]')))
-                elif is_older_than_15_years == 'no':
-                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredNoRadioButton"]')))
-                elif is_older_than_15_years == 'unknown':
-                    radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredUnknownRadioButton"]')))
-                driver.execute_script("arguments[0].click();", radio)
+                    is_older_than_15_years = user_data.get("passportHistory").get("passportBookDetails").get("isOlderThan15Years")
+                    print(f"is_older_than_15_years: {is_older_than_15_years}")
+                    if is_older_than_15_years == 'yes':
+                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredYesRadioButton"]')))
+                    elif is_older_than_15_years == 'no':
+                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredNoRadioButton"]')))
+                    elif is_older_than_15_years == 'unknown':
+                        radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredUnknownRadioButton"]')))
+                    driver.execute_script("arguments[0].click();", radio)
         else:
             book_issue_date = user_data.get("passportHistory").get("passportBookDetails").get("issueDate", False)
             if book_issue_date:
