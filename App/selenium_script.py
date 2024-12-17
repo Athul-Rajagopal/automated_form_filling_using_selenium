@@ -386,6 +386,7 @@ def fill_form(user_data, webhook_url):
         
         try:
             travel_date = user_data.get('travelPlans', {}).get('travelDate')
+            print(f"travel date {travel_date}")
             if travel_date is not None:
                 date_of_trip_str = user_data.get('travelPlans').get('travelDate').get("$date")
                 date_of_trip = datetime.strptime(date_of_trip_str, "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -413,11 +414,17 @@ def fill_form(user_data, webhook_url):
                 travel_destination_input.click()
                 travel_destination_input.send_keys(travel_destination)
             
+            active_element = driver.switch_to.active_element
+            active_element.send_keys(Keys.TAB)
+            time.sleep(0.5)
+            
             # click next
             next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
-            next_button.click()
+            # next_button.click()
+            driver.execute_script("arguments[0].click();", next_button)
         
         except Exception as e:
+            print(f"An error occurred: {e}")
             send_failure_response(webhook_url, "Failed to fill travel plans. Please try again.", str(e)) 
             driver.quit()
         
@@ -426,8 +433,9 @@ def fill_form(user_data, webhook_url):
 # page 6
         # emergency contact
         try:
-            wait_for_page_load(driver)
+            # wait_for_page_load(driver)
             print('entered in emergency contact')
+            print(user_data['emergencyContact'].get('emergencyContactName'))
             if  user_data['emergencyContact'].get('emergencyContactName'):
                 # name
                 wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_emergencyContacts_ecNameTextBox'))).send_keys(user_data['emergencyContact'].get('emergencyContactName', 'N/A'))
@@ -470,6 +478,7 @@ def fill_form(user_data, webhook_url):
             print('next button clicked')
         
         except Exception as e:
+            print(f"An error occurred: {e}")
             send_failure_response(webhook_url, "Failed to fill emergency contact information. Please try again", str(e)) 
             driver.quit()
         
