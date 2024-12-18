@@ -18,6 +18,7 @@ from date_calculation_helper import is_within_8_years_6_days, is_name_change_nee
 from passport_both_helper import passport_both_helper
 from passport_utils import passport_route_flow_helper
 
+from selenium.webdriver.common.action_chains import ActionChains
 
 
 def fill_form(user_data, webhook_url):
@@ -382,57 +383,79 @@ def fill_form(user_data, webhook_url):
         print("waiting for page 5") 
          
 # page 5     
-        # travel plans
-        
+        # travel plans 
         try:
-            travel_date = user_data.get('travelPlans', {}).get('travelDate')
-            print(f"travel date {travel_date}")
-            if travel_date is not None:
+
+            body = driver.find_element(By.TAG_NAME, 'body')
+            driver.execute_script("arguments[0].click();", body)
+
+            # Check and handle travel date
+            travel_date = user_data.get('travelPlans', {}).get('travelDate', None)
+            if travel_date:
+                print("entered in travel date")
                 date_of_trip_str = user_data.get('travelPlans').get('travelDate').get("$date")
                 date_of_trip = datetime.strptime(date_of_trip_str, "%Y-%m-%dT%H:%M:%S.%fZ")
                 formatted_dot = date_of_trip.strftime("%m-%d-%Y")
-                wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_travelPlans_TripDateTextBox'))).send_keys(formatted_dot)
-                # Unfocus the field by clicking somewhere else (e.g., body)
+                travel_date_input = wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_travelPlans_TripDateTextBox')))
+                travel_date_input.send_keys(formatted_dot)
                 driver.find_element(By.TAG_NAME, 'body').click()
-                time.sleep(2) 
-            
-            return_date = user_data.get('travelPlans', {}).get('returnDate')
-            if return_date is not None:
+                time.sleep(2)
+            else:
+                print("Travel date is not provided, skipping.")
+                body = driver.find_element(By.TAG_NAME, 'body')
+                driver.execute_script("arguments[0].click();", body)
+
+            # Check and handle return date
+            return_date = user_data.get('travelPlans', {}).get('returnDate', None)
+            if return_date:
                 date_of_return_str = user_data.get('travelPlans').get('returnDate').get("$date")
                 date_of_return = datetime.strptime(date_of_return_str, "%Y-%m-%dT%H:%M:%S.%fZ")
                 formatted_dor = date_of_return.strftime("%m-%d-%Y")
-                print("return data", formatted_dor)
                 return_date_input = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_travelPlans_TripDateReturnTextBox"]')))
-                return_date_input.click()  # Focus on the field
+                return_date_input.click()
                 return_date_input.send_keys(formatted_dor)
                 time.sleep(2)
-            ### travel destination is to be filled
-            travel_destination = user_data.get('travelPlans',{}).get("travelDestination", False)
+            else:
+                print("Return date is not provided, skipping.")
+
+            # Check and handle travel destination
+            travel_destination = user_data.get('travelPlans', {}).get("travelDestination", "")
+            travel_destination_input = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_travelPlans_CountriesTextBox"]')))
+            travel_destination_input.click()
             if travel_destination:
-                print("destination", travel_destination)
                 travel_destination_input = wait.until(EC.presence_of_element_located((By.XPATH, '//*[@id="PassportWizard_travelPlans_CountriesTextBox"]')))
                 travel_destination_input.click()
                 travel_destination_input.send_keys(travel_destination)
-            
-            active_element = driver.switch_to.active_element
-            active_element.send_keys(Keys.TAB)
-            time.sleep(0.5)
-            
-            # click next
-            next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
-            # next_button.click()
+            else:
+                print("Travel destination is not provided, skipping.")
+
+            body = driver.find_element(By.TAG_NAME, 'body')
+            driver.execute_script("arguments[0].click();", body)
+
+            # Check for any overlay and remove it
+            overlays = driver.find_elements(By.CLASS_NAME, 'overlay-class')  # Replace with the actual class of overlays
+            for overlay in overlays:
+                driver.execute_script("arguments[0].style.display = 'none';", overlay)
+
+            # Then click the "Next" button again
+            next_button = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton"]')))
             driver.execute_script("arguments[0].click();", next_button)
-        
+
+
         except Exception as e:
             print(f"An error occurred: {e}")
             send_failure_response(webhook_url, "Failed to fill travel plans. Please try again.", str(e)) 
             driver.quit()
-        
-        print("waiting for page 6")  
+
+        print("Waiting for page 6...")
+
         
 # page 6
         # emergency contact
         try:
+
+            driver.find_element(By.TAG_NAME, 'body').click()
+            time.sleep(2)
             # wait_for_page_load(driver)
             print('entered in emergency contact')
             print(user_data['emergencyContact'].get('emergencyContactName'))
@@ -472,6 +495,8 @@ def fill_form(user_data, webhook_url):
                 driver.find_element(By.TAG_NAME, 'body').click()
                 time.sleep(2)
 
+            next_button = wait.until(EC.presence_of_element_located((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
+            
             # click next
             next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
             driver.execute_script("arguments[0].click();", next_button)
@@ -716,8 +741,8 @@ def fill_form(user_data, webhook_url):
                         most_recent_passport_details(driver, user_data)
                     
             elif passport_history == "both":
-                passport_both_helper(driver, user_data)
-                want_to_call_helper_function = False
+                want_to_call_helper_function = passport_both_helper(driver, user_data)
+                
             else:
                 type_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveNone"]')))
                 driver.execute_script("arguments[0].click();", type_radio)
@@ -807,29 +832,6 @@ def fill_form(user_data, webhook_url):
         is_card_name_change_needed = is_name_change_needed(date_of_birth_str, card_issue_date_str) if card_issue_date_str else False
         print('KK')
         print(is_book_name_change_needed)
-        # print(f'is_book_name_change_needed: {is_name_change_needed(date_of_birth_str, book_issue_date_str)}')
-        # print(f'is_card_name_change_needed: {is_card_name_change_needed}')
-        # print(f'book {(passport_book_status != "yes" if passport_book_status else False) or ( (not is_book_name_change_needed) if book_issue_date_str else False)}')
-        # print(f'card {(passport_card_status != "yes" if passport_card_status else False) or ( (not is_card_name_change_needed) if card_issue_date_str else False)}')
-        # print(f'both {passport_history == "both" and (passport_book_status in ["lost", "stolen"] or passport_card_status in ["lost", "stolen"])}')
-        # print('d')
-        # print(
-        #     ((passport_book_status != "yes" if passport_book_status else False) or 
-        #      ((not is_book_name_change_needed) if book_issue_date_str else False)) or 
-        #     ((passport_card_status != "yes" if passport_card_status else False) or 
-        #      ((not is_card_name_change_needed) if card_issue_date_str else False)) or
-        #     (passport_history == "both" and 
-        #      (passport_book_status in ["lost", "stolen"] or 
-        #       passport_card_status in ["lost", "stolen"])))
-
-        # if (
-        #     ((passport_book_status != "yes" if passport_book_status) or 
-        #      ((not is_book_name_change_needed) if book_issue_date_str)) or 
-        #     ((passport_card_status != "yes" if passport_card_status) or 
-        #      ((not is_card_name_change_needed) if card_issue_date_str)) or
-        #     (passport_history == "both" and 
-        #      (passport_book_status in ["lost", "stolen"] or 
-        #       passport_card_status in ["lost", "stolen"]))):
 
         book_condition = (
             passport_book_status != "yes" if passport_book_status else False
@@ -1298,10 +1300,21 @@ def fill_form(user_data, webhook_url):
             time.sleep(1) 
             driver.execute_script("arguments[0].click();", button)
 
+# (passport_history != 'both' and passport_option != 'both' and passport_history != passport_option)
+
             print("ddddaee")
             # Check for alert
             passport_history = user_data.get("passportHistory", False).get('hasPassportCardOrBook', False)
-            if passport_history != 'both' and passport_option != 'both' and passport_history != passport_option:
+            if passport_history:
+                if passport_history == 'card':
+                    passport_history_card_status = user_data['passportHistory']['passportCardDetails'].get('status')
+                else:
+                    passport_history_book_status = user_data['passportHistory']['passportBookDetails'].get('status')
+            
+            passport_option = user_data['productInfo'].get('passportOption', False)
+
+            if ((passport_book_status != 'yes' and passport_option not in ['book', 'both'])
+            or (passport_card_status != 'yes' and passport_option not in ['card', 'both'])):
                 print("alert")
                 alert = WebDriverWait(driver, 10).until(EC.alert_is_present())
                 alert.accept()
@@ -1339,8 +1352,20 @@ def fill_form(user_data, webhook_url):
 # page 12
 
         # printing pdf
-        acknowledgment_checkbox = wait.until(EC.element_to_be_clickable((By.ID, 'PassportWizard_nextStepsStep_ConfirmationCheckBox')))
-        driver.execute_script("arguments[0].scrollIntoView();", acknowledgment_checkbox)
+        #Locate the checkbox using an explicit wait
+        acknowledgment_checkbox = wait.until(
+            EC.presence_of_element_located((By.ID, 'PassportWizard_nextStepsStep_ConfirmationCheckBox'))
+        )
+
+        # Scroll to the element using JavaScript to ensure visibility
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", acknowledgment_checkbox)
+
+        # Wait until the element is clickable
+        acknowledgment_checkbox = wait.until(
+            EC.element_to_be_clickable((By.ID, 'PassportWizard_nextStepsStep_ConfirmationCheckBox'))
+        )
+
+        # Click the checkbox
         acknowledgment_checkbox.click()
         
         wait.until(EC.element_to_be_clickable((By.ID, 'PassportWizard_nextStepsStep_printFormButton')))

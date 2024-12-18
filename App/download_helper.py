@@ -102,11 +102,11 @@ def wait_for_downloads(download_dir, timeout=60):
 
                             
                             # Remove the first four pages of the PDF
-                            remove_first_four_pages(file_path, modified_file_path)
-                            print("removed 4 pages")
+                            # remove_first_four_pages(file_path, modified_file_path)
+                            # print("removed 4 pages")
                             
                              # Upload the file to S3
-                            file_url = upload_to_s3(modified_file_path, filename)
+                            file_url = upload_to_s3(file_path, filename)
                             print("file uploaded")
                             if file_url:
                                 # Generate a unique ObjectId for the document
@@ -115,7 +115,7 @@ def wait_for_downloads(download_dir, timeout=60):
 
                                 # Clean up local files after upload
                                 os.remove(file_path)
-                                os.remove(modified_file_path)
+                                # os.remove(modified_file_path)
 
                                 # Return ObjectId and file URL
                                 return {

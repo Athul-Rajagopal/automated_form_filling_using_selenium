@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import pytz
+from dateutil.relativedelta import relativedelta
 
 def is_within_8_years_6_days(date_str):
     try:
@@ -22,8 +24,14 @@ def normalize_date(date: datetime) -> datetime:
     return datetime(date.year, date.month, date.day)
 
 def get_current_date_in_dc() -> datetime:
-    """Get the current date in DC (assuming local timezone)."""
-    return normalize_date(datetime.now())
+    """Get the current date in America/New_York timezone."""
+    # Get current UTC time
+    utc_now = datetime.utcnow()
+    # Convert to America/New_York timezone
+    ny_tz = pytz.timezone("America/New_York")
+    ny_now = utc_now.replace(tzinfo=pytz.utc).astimezone(ny_tz)
+    # Normalize to exclude time component
+    return normalize_date(ny_now)
 
 def is_recent_issue(issue_date: str) -> bool:
     """Check if the issue date is within the past two years."""
@@ -63,9 +71,10 @@ def is_correct_details_needed(dob: str, issue_date: str) -> bool:
 
 def is_name_change_needed(dob: str, issue_date: str) -> bool:
     try:
-        print('is_name_change_needed')
-        print(dob, issue_date)
-        """Determine if name change questions should be shown."""
+        print("is_name_change_needed")
+        print(f"DOB: {dob}, Issue Date: {issue_date}")
+
+        # Parse input dates
         dob_date = normalize_date(datetime.strptime(dob, "%Y-%m-%dT%H:%M:%S.%fZ"))
         issue_date_obj = normalize_date(datetime.strptime(issue_date, "%Y-%m-%dT%H:%M:%S.%fZ"))
         current_date = get_current_date_in_dc()
@@ -74,19 +83,30 @@ def is_name_change_needed(dob: str, issue_date: str) -> bool:
         age_at_issue = (
             issue_date_obj.year - dob_date.year -
             (1 if (issue_date_obj.month < dob_date.month or
-                (issue_date_obj.month == dob_date.month and issue_date_obj.day < dob_date.day)) else 0)
+                   (issue_date_obj.month == dob_date.month and issue_date_obj.day < dob_date.day)) else 0)
         )
+        print(f"Age at issue: {age_at_issue}")
 
         # Determine validity duration based on age at issue
         validity_years = 5 if age_at_issue < 16 else 10
-        expiration_date = issue_date_obj.replace(year=issue_date_obj.year + validity_years)
+        expiration_date = issue_date_obj + relativedelta(years=validity_years)
+        print(f"Expiration Date: {expiration_date}")
 
         # Logic for showing name change question
-        five_years_after_expiration = expiration_date.replace(year=expiration_date.year + 5)
-        return current_date > expiration_date and current_date <= five_years_after_expiration
+        five_years_after_expiration = expiration_date + relativedelta(years=5)
+        print(f"Five years after expiration: {five_years_after_expiration}")
 
-        # Logic for name change
-        return current_date > expiration_date and (current_date - expiration_date).days / 365 <= 5
+        # Check if name change is needed
+        # name_change_needed = expiration_date < current_date <= five_years_after_expiration
+        if current_date >= expiration_date and current_date <= five_years_after_expiration:
+            name_change_needed = True
+        else:
+            name_change_needed = False
+
+        print(f"Name change needed: {name_change_needed}")
+        print(f"current date {current_date}")
+
+        return name_change_needed
     except Exception as e:
         print(f"Error checking name change: {e}")
         raise e

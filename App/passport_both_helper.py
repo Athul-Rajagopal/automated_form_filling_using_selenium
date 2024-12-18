@@ -5,6 +5,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 def passport_both_helper(driver, user_data):
     try:
+        want_to_call_helper_function = True 
+
         wait = WebDriverWait(driver, 120)
         print("passport both helper")
         radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CurrentHaveBoth"]')))
@@ -26,7 +28,7 @@ def passport_both_helper(driver, user_data):
             radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardLost"]')))
         elif passport_card_status == "stolen":
             radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardStolen"]')))
-        elif passport_card_details == 'yes':
+        elif passport_card_status == 'yes':
             radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardYes"]')))
         elif passport_card_status == "damaged":
             radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_CardDamaged"]')))
@@ -116,6 +118,8 @@ def passport_both_helper(driver, user_data):
                     elif is_older_than_15_years == 'unknown':
                         radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassport_BookExpiredUnknownRadioButton"]')))
                     driver.execute_script("arguments[0].click();", radio)
+                else:
+                    want_to_call_helper_function = False
         else:
             book_issue_date = user_data.get("passportHistory").get("passportBookDetails").get("issueDate", False)
             if book_issue_date:
@@ -145,7 +149,8 @@ def passport_both_helper(driver, user_data):
         if book_number:
             wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_mostRecentPassport_ExistingBookNumber'))).send_keys(book_number)
 
-        
+        print("reached the end of passport_both_helper")
+        return want_to_call_helper_function
 
     except Exception as e:
         print(f"Error in passport_both_helper: {e}")
