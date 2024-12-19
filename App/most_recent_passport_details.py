@@ -209,6 +209,9 @@ def most_recent_passport_details(driver, user_data):
                         radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_mostRecentPassportContinued_LimitedIssueBook_1"]')))
                         driver.execute_script("arguments[0].click();", radio)
 
+            next_button = wait.until(EC.element_to_be_clickable((By.XPATH,'//*[@id="PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton"]')))
+            driver.execute_script("arguments[0].click();", next_button)
+
 
     except Exception as e:
         print(f"Error in most recent passport details: {e}")

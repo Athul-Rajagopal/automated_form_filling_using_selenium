@@ -55,7 +55,8 @@ def passport_both_helper(driver, user_data):
         card_first_name_and_middle_name = user_data.get("passportHistory").get("passportCardDetails").get("firstNameAndMiddleName", False)
         card_number = user_data.get("passportHistory").get("passportCardDetails").get("number", False)
         if passport_card_status == "yes":
-            if not card_first_name_and_middle_name or not card_number:
+            # if not card_first_name_and_middle_name or not card_number:
+            if not card_number:
                 print("first name and middle name and card number not found")
                 raise ValueError("First name and middle name and card number are required when passport card status is 'yes'.")
 
@@ -132,7 +133,8 @@ def passport_both_helper(driver, user_data):
         book_first_name_and_middle_name = user_data.get("passportHistory").get("passportBookDetails").get("firstNameAndMiddleName", False)
         book_number = user_data.get("passportHistory").get("passportBookDetails").get("number", False)
         if passport_book_status == "yes":
-            if not book_first_name_and_middle_name or not book_number:
+            # if not book_first_name_and_middle_name or not book_number:
+            if not book_number:
                 print("first name and middle name and book number not found")
                 raise ValueError("First name and middle name and book number are required when passport book status is 'yes'.")
 
