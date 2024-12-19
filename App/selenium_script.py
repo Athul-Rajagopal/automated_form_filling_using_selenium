@@ -850,7 +850,7 @@ def fill_form(user_data, webhook_url):
             (passport_book_status in ["lost", "stolen"] or 
             passport_card_status in ["lost", "stolen"])
         )
-        enter = True   
+        # enter = True   
         print('hello') 
         if book_condition or card_condition or both_condition:
     # Do something
@@ -1077,6 +1077,7 @@ def fill_form(user_data, webhook_url):
         # other names
         
         try:
+            print("reached all othere names")
             other_names = user_data.get("personalInfo").get("allPreviousNames", [])
             
             if other_names:
