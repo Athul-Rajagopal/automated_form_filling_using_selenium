@@ -29,7 +29,7 @@ def fill_form(user_data, webhook_url):
     
     # download_dir = r"C:\Users\athul\Downloads\passport"  # Change this to your desired download directory
     download_dir = "/root/passport-automation/downloads"
-    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")  # Disable GPU rendering to avoid issues
