@@ -77,7 +77,7 @@ def remove_first_four_pages(input_pdf_path, output_pdf_path):
 
 
 
-def wait_for_downloads(download_dir, timeout=60):
+def wait_for_downloads(download_dir, timeout=300):
     """
     Wait until all files in the download directory are downloaded.
 

@@ -29,7 +29,7 @@ def fill_form(user_data, webhook_url):
     
     # download_dir = r"C:\Users\athul\Downloads\passport"  # Change this to your desired download directory
     download_dir = "/root/passport-automation/downloads"
-    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")  # Disable GPU rendering to avoid issues
@@ -58,7 +58,7 @@ def fill_form(user_data, webhook_url):
         WebDriverWait(driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')   
         
         # Locate the checkbox using XPath and click it
-        wait = WebDriverWait(driver, 120)  # Wait up to 60 seconds
+        wait = WebDriverWait(driver, 240)  # Wait up to 240 seconds
         privacy_checkbox = wait.until(EC.element_to_be_clickable((By.ID, 'chkPrivacy')))
         privacy_checkbox.click()
         
@@ -1043,9 +1043,11 @@ def fill_form(user_data, webhook_url):
                     formatted_dom = date_of_marriage.strftime("%m-%d-%Y")
                     wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_marriedDateTextBox'))).send_keys(formatted_dom)
                     
+                    print('reached widow or divorced option')
                     # widow or divorce
                     widow_or_divorce = user_data['parentAndMarriageInfo']['marriageDetails'].get("isWidowedOrDivorced")
                     if widow_or_divorce:
+                        print('entered widow or divorce')
                         radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_divorcedList_0"]'))) 
                         driver.execute_script("arguments[0].click();", radio)
                         # divorced date
@@ -1077,7 +1079,7 @@ def fill_form(user_data, webhook_url):
         # other names
         
         try:
-            print("reached all othere names")
+            print("reached all other names")
             other_names = user_data.get("personalInfo").get("allPreviousNames", [])
             
             if other_names:
@@ -1307,33 +1309,36 @@ def fill_form(user_data, webhook_url):
             driver.quit()
 # (passport_history != 'both' and passport_option != 'both' and passport_history != passport_option)
 
-            print("ddddaee")
-            # Check for alert
-            passport_history = user_data.get("passportHistory", False).get('hasPassportCardOrBook', False)
-            # Initialize passport statuses
-            passport_card_status = None
-            passport_book_status = None
+        print("ddddaee")
+        # Check for alert
+        passport_history = user_data.get("passportHistory", False).get('hasPassportCardOrBook', False)
+        # Initialize passport statuses
+        passport_card_status = None
+        passport_book_status = None
 
-            # Check passport history for card or book
-            if passport_history:
-                if passport_history == 'card':
-                    # Handle case where passportCardDetails might be null
-                    passport_card_details = user_data['passportHistory'].get('passportCardDetails', None)
-                    if passport_card_details:
-                        passport_card_status = passport_card_details.get('status')
-                else:
-                    passport_book_details = user_data['passportHistory'].get('passportBookDetails', None)
-                    if passport_book_details:
-                        passport_book_status = passport_book_details.get('status')
+        # Check passport history for card or book
+        if passport_history:
+            if passport_history == 'card':
+                # Handle case where passportCardDetails might be null
+                passport_card_details = user_data['passportHistory'].get('passportCardDetails', None)
+                if passport_card_details:
+                    passport_card_status = passport_card_details.get('status')
+            else:
+                passport_book_details = user_data['passportHistory'].get('passportBookDetails', None)
+                if passport_book_details:
+                    passport_book_status = passport_book_details.get('status')
 
-            # Get passport option from productInfo
-            passport_option = user_data['productInfo'].get('passportOption', False)
+        # Get passport option from productInfo
+        passport_option = user_data['productInfo'].get('passportOption', False)
+        print(f"passport_option: {passport_option}")
+        print(f"passport_card_status: {passport_card_status}")
+        print(f"passport_book_status: {passport_book_status}")
 
-            if ((passport_book_status != 'yes' and passport_option not in ['book', 'both'])
-            or (passport_card_status != 'yes' and passport_option not in ['card', 'both'])):
-                print("alert")
-                alert = WebDriverWait(driver, 10).until(EC.alert_is_present())
-                alert.accept()
+        if ((passport_book_status != 'yes' and passport_option not in ['book', 'both'])
+        or (passport_card_status != 'yes' and passport_option not in ['card', 'both'])):
+            print("alert")
+            alert = WebDriverWait(driver, 10).until(EC.alert_is_present())
+            alert.accept()
 
         
         print("waiting for page 12")
