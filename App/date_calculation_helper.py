@@ -96,12 +96,16 @@ def is_name_change_needed(dob: str, issue_date: str) -> bool:
         five_years_after_expiration = expiration_date + relativedelta(years=5)
         print(f"Five years after expiration: {five_years_after_expiration}")
 
+        if age_at_issue < 16 and current_date > expiration_date:           
+            return False
+
         # Check if name change is needed
         # name_change_needed = expiration_date < current_date <= five_years_after_expiration
-        if current_date >= expiration_date and current_date <= five_years_after_expiration:
+        if current_date >= expiration_date and current_date <= five_years_after_expiration :
             name_change_needed = True
         else:
             name_change_needed = False
+
 
         print(f"Name change needed: {name_change_needed}")
         print(f"current date {current_date}")
