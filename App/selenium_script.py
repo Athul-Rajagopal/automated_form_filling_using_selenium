@@ -29,7 +29,7 @@ def fill_form(user_data, webhook_url):
     
     # download_dir = r"C:\Users\athul\Downloads\passport"  # Change this to your desired download directory
     download_dir = "/root/passport-automation/downloads"
-    chrome_options.add_argument("--headless")
+    # chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")  # Disable GPU rendering to avoid issues
@@ -850,7 +850,7 @@ def fill_form(user_data, webhook_url):
             (passport_book_status in ["lost", "stolen"] or 
             passport_card_status in ["lost", "stolen"])
         )
-        enter = True   
+        # enter = True   
         print('hello') 
         if book_condition or card_condition or both_condition:
     # Do something
@@ -1077,6 +1077,7 @@ def fill_form(user_data, webhook_url):
         # other names
         
         try:
+            print("reached all othere names")
             other_names = user_data.get("personalInfo").get("allPreviousNames", [])
             
             if other_names:
@@ -1300,17 +1301,32 @@ def fill_form(user_data, webhook_url):
             time.sleep(1) 
             driver.execute_script("arguments[0].click();", button)
 
+        except Exception as e:
+            print(f"Error filling passport options: {e}")
+            send_failure_response(webhook_url, "Failed to fill passport options. Please try again.", str(e)) 
+            driver.quit()
 # (passport_history != 'both' and passport_option != 'both' and passport_history != passport_option)
 
             print("ddddaee")
             # Check for alert
             passport_history = user_data.get("passportHistory", False).get('hasPassportCardOrBook', False)
+            # Initialize passport statuses
+            passport_card_status = None
+            passport_book_status = None
+
+            # Check passport history for card or book
             if passport_history:
                 if passport_history == 'card':
-                    passport_history_card_status = user_data['passportHistory']['passportCardDetails'].get('status')
+                    # Handle case where passportCardDetails might be null
+                    passport_card_details = user_data['passportHistory'].get('passportCardDetails', None)
+                    if passport_card_details:
+                        passport_card_status = passport_card_details.get('status')
                 else:
-                    passport_history_book_status = user_data['passportHistory']['passportBookDetails'].get('status')
-            
+                    passport_book_details = user_data['passportHistory'].get('passportBookDetails', None)
+                    if passport_book_details:
+                        passport_book_status = passport_book_details.get('status')
+
+            # Get passport option from productInfo
             passport_option = user_data['productInfo'].get('passportOption', False)
 
             if ((passport_book_status != 'yes' and passport_option not in ['book', 'both'])
@@ -1319,14 +1335,13 @@ def fill_form(user_data, webhook_url):
                 alert = WebDriverWait(driver, 10).until(EC.alert_is_present())
                 alert.accept()
 
-        except Exception as e:
-            print(f"Error filling passport options: {e}")
-            send_failure_response(webhook_url, "Failed to fill passport options. Please try again.", str(e)) 
-            driver.quit()
         
         print("waiting for page 12")
 
         # Electronic Signature
+        passport_book_details = False
+        passport_card_details = False
+        
         passport_history_details = user_data.get("passportHistory", {})
         passport_book_details = passport_history_details.get("passportBookDetails", False)
         passport_card_details = passport_history_details.get("passportCardDetails", False)
