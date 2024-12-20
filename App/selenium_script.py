@@ -29,7 +29,7 @@ def fill_form(user_data, webhook_url):
     
     # download_dir = r"C:\Users\athul\Downloads\passport"  # Change this to your desired download directory
     download_dir = "/root/passport-automation/downloads"
-    chrome_options.add_argument("--headless")
+    # chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")  # Disable GPU rendering to avoid issues
@@ -1031,9 +1031,11 @@ def fill_form(user_data, webhook_url):
                     # citizenship
                     citizenship = user_data['parentAndMarriageInfo']['marriageDetails'].get("spouseIsUSCitizen")
                     if citizenship:
+                        print("entered citizenship")
                         citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_spouseCitizenList_0"]')))  # Other/Unspecified
                         driver.execute_script("arguments[0].click();", citizenship_radio)
                     else:
+                        print("entered not citizenship")
                         citizenship_radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_spouseCitizenList_1"]')))  # Other/Unspecified
                         driver.execute_script("arguments[0].click();", citizenship_radio)
                         
@@ -1051,7 +1053,7 @@ def fill_form(user_data, webhook_url):
                         radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_moreAboutYouStep_divorcedList_0"]'))) 
                         driver.execute_script("arguments[0].click();", radio)
                         # divorced date
-                        marriage_or_divorce_date_str = user_data['parentAndMarriageInfo']['marriageDetails']["widowOrDivorceDate"]
+                        marriage_or_divorce_date_str = user_data['parentAndMarriageInfo']['marriageDetails']["widowOrDivorceDate"]['$date']
                         marriage_or_divorce_date = datetime.strptime(marriage_or_divorce_date_str, "%Y-%m-%dT%H:%M:%S.%fZ")
                         formatted_dod = marriage_or_divorce_date.strftime("%m-%d-%Y")
                         wait.until(EC.presence_of_element_located((By.ID, 'PassportWizard_moreAboutYouStep_divorcedDateTextBox'))).send_keys(formatted_dod)
@@ -1069,6 +1071,7 @@ def fill_form(user_data, webhook_url):
                 driver.execute_script("arguments[0].click();", next_button)
             
             except Exception as e:
+                print(f"error {e}")
                 send_failure_response(webhook_url, "Failed to fill marriage info. Please try again.", str(e)) 
                 driver.quit()
 
@@ -1334,11 +1337,13 @@ def fill_form(user_data, webhook_url):
         print(f"passport_card_status: {passport_card_status}")
         print(f"passport_book_status: {passport_book_status}")
 
-        if ((passport_book_status != 'yes' and passport_option not in ['book', 'both'])
-        or (passport_card_status != 'yes' and passport_option not in ['card', 'both'])):
-            print("alert")
+        if ((passport_book_status not in ['yes', None] and passport_option not in ['book', 'both'])
+        or (passport_card_status not in ['yes', None] and passport_option not in ['card', 'both'])):
+            print("alerteeeeeeeeeeeeeeeeeee")
             alert = WebDriverWait(driver, 10).until(EC.alert_is_present())
             alert.accept()
+
+            print('alert accepted')
 
         
         print("waiting for page 12")
@@ -1350,15 +1355,22 @@ def fill_form(user_data, webhook_url):
         passport_history_details = user_data.get("passportHistory", {})
         passport_book_details = passport_history_details.get("passportBookDetails", False)
         passport_card_details = passport_history_details.get("passportCardDetails", False)
+
+        print(f"passport cad details {passport_card_details}")
+        print(f"passport book details {passport_book_details}")
         
+        # if ((passport_book_details and passport_book_details.get("status") in ["lost", "stolen"] and not passport_book_details.get("hasReportedLostOrStolen")) or 
+        #     (passport_card_details and passport_card_details.get("status") in ["lost", "stolen"] and not passport_card_details.get("hasReportedLostOrStolen"))):
         if ((passport_book_details and passport_book_details.get("status") in ["lost", "stolen"] and not passport_book_details.get("hasReportedLostOrStolen")) or 
-            (passport_card_details and passport_card_details.get("status") in ["lost", "stolen"] and not passport_card_details.get("hasReportedLostOrStolen"))):
+             (passport_card_details and passport_card_details.get("status") in ["lost", "stolen"] and not passport_card_details.get("hasReportedLostOrStolen"))):
+
             print("electronic signature")
             lost_info = user_data.get('lostInfo',{})
             is_own_passport = lost_info.get('isOwnPassport',False)
             if is_own_passport:
                 try:
                     print("electronic signature")
+                    # radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_esignatureStep_lostOrStolenDelivery_1"]'))) 
                     radio = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="PassportWizard_esignatureStep_lostOrStolenDelivery_1"]'))) 
                     driver.execute_script("arguments[0].click();", radio)
                     next_button = wait.until(EC.element_to_be_clickable((By.ID,'PassportWizard_StepNavigationTemplateContainerID_StartNextPreviousButton')))
@@ -1367,6 +1379,7 @@ def fill_form(user_data, webhook_url):
                     print(f"Error filling electronic signature: {e}")
                     send_failure_response(webhook_url, "Failed to fill electronic signature. Please try again.", str(e)) 
                     driver.quit()
+
 
 
 # page 12
@@ -1404,7 +1417,7 @@ def fill_form(user_data, webhook_url):
              
             
     except Exception as e:
-        print(f"An error occurred: {e}", flush=True)
+        print(f"An error occurred: {str(e)}", flush=True)
         send_failure_response(webhook_url, "Application not submitted. Please try again later.", str(e))
 
     finally:
